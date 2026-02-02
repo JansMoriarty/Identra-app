@@ -11,7 +11,7 @@ class MenuHelper
                 'icon' => 'dashboard',
                 'name' => 'Dashboard',
                 'path' => '/',
-                
+
             ],
             // [
             //     'icon' => 'calendar',
@@ -25,9 +25,13 @@ class MenuHelper
             // ],
 
             [
-                'name' => 'User',
+                'name' => 'Menejemen Pengguna',
                 'icon' => 'user-profile',
-                'path' => '/basic-tables', 'pro' => false
+                'subItems' => [
+                    ['name' => 'Daftar Guru', 'path' => '/basic-tables', 'pro' => false],
+                    ['name' => 'Daftar User', 'path' => '/', 'pro' => false]
+                ],
+
             ],
             [
                 'name' => 'Pages',

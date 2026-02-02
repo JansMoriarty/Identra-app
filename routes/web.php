@@ -48,6 +48,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         view('pages.form.form-elements', ['title' => 'Form Elements'])
     )->name('form-elements');
 
+    Route::get('/blank', fn () =>
+        view('pages.blank', ['title' => 'Face Recognize'])
+    )->name('blank');
+
     Route::get('/basic-tables', fn () =>
         view('pages.tables.basic-tables', ['title' => 'Basic Tables'])
     )->name('basic-tables');
