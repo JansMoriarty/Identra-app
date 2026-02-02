@@ -25,14 +25,23 @@ class MenuHelper
             // ],
 
             [
-                'name' => 'Menejemen Pengguna',
+                'name' => 'Manajemen Pengguna',
                 'icon' => 'user-profile',
                 'subItems' => [
-                    ['name' => 'Daftar Guru', 'path' => '/basic-tables', 'pro' => false],
-                    ['name' => 'Daftar User', 'path' => '/', 'pro' => false]
+                    [
+                        'name' => 'Daftar Guru',
+                        'path' => '/manajemen-pengguna/guru',
+                        'pro' => false
+                    ],
+                    [
+                        'name' => 'Daftar User',
+                        'path' => '/#',
+                        'pro' => false
+                    ]
                 ],
-
             ],
+
+
             [
                 'name' => 'Pages',
                 'icon' => 'pages',

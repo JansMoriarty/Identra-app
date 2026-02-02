@@ -134,62 +134,35 @@ class AdminGuruController extends Controller
     }
 
     // POST /api/admin/guru
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            // 'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6',
-            'guru_id' => 'required|uuid',
-            'tahun' => 'sometimes|integer' // opsional, default nanti 2025
-        ]);
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email',
+        'password' => 'required|min:6',
+        'tahun' => 'sometimes|integer'
+    ]);
 
-        $tahun = $validated['tahun'] ?? 2025;
+    // ✅ 1) Generate UUID otomatis untuk guru_id
+    $guruId = (string) Str::uuid();
 
-        // 1) Ambil semua guru dari API
-        $response = Http::get("https://zieapi.zielabs.id/api/getguru", [
-            'tahun' => $tahun
-        ]);
+    // ✅ 2) Buat user guru di DB lokal
+    $user = User::create([
+        'name' => $validated['name'],
+        'email' => $validated['email'],
+        'password' => Hash::make($validated['password']),
+        'role' => 'guru',
+        'guru_id' => $guruId,
+    ]);
 
-        if ($response->failed()) {
-            return response()->json([
-                'message' => 'Gagal memanggil API Guru',
-                'status' => $response->status(),
-                'body' => $response->body()
-            ], 500);
-        }
+    return response()->json([
+        'message' => 'User guru berhasil ditambahkan',
+        'data' => [
+            'user' => $user->only(['id', 'name', 'email', 'role', 'guru_id'])
+        ]
+    ], 201);
+}
 
-        $gurus = $response->json();
-
-        // 2) Cari guru berdasarkan guru_id
-        $guruData = collect($gurus)->firstWhere('guru_id', $validated['guru_id']);
-
-        if (!$guruData) {
-            return response()->json([
-                'message' => 'Guru tidak ditemukan di API Guru'
-            ], 404);
-        }
-
-        // 3) Buat akun login guru
-        $user = User::create([
-            'name' => $guruData['nama'],
-            'email' => $guruData['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => 'guru',
-            'guru_id' => $validated['guru_id'],
-        ]);
-
-        return response()->json([
-            'message' => 'User guru berhasil ditambahkan',
-            'data' => [
-                'user' => $user->only(['id', 'name', 'email', 'role', 'guru_id']),
-                'guru_api' => [
-                    'nuptk' => $guruData['nuptk'] ?? null,
-                    'nip' => $guruData['nip'] ?? null,
-                    'jenis_kelamin' => $guruData['jenis_kelamin'] ?? null,
-                ]
-            ]
-        ], 201);
-    }
 
     // GET /api/admin/guru/{id}
     public function show($id)
