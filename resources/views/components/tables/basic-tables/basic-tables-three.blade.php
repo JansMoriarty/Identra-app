@@ -9,7 +9,7 @@
     init() {
         fetch('/api/admin/guru', {
             headers: {
-                'Authorization': 'Bearer 1|9hVR0jhAFdQxs9qRbSAZCj8unBikML2sNylZFvFI969699fe',
+                'Authorization': 'Bearer 2|yOWqZpCH5ZrnNIPz6Uqs94TsmDZU8kfhGJ57ryMT159b6c6e',
                 'Accept': 'application/json'
             },
             credentials: 'same-origin'
@@ -22,6 +22,7 @@
             const data = Array.isArray(result?.data) ? result.data : [];
             this.transactions = data.map(guru => ({
                 id: guru.id,
+                guru_id: guru.guru_id,
                 name: guru.name,
                 date: guru.created_at,
                 email: guru.email,
@@ -191,12 +192,42 @@
                                 </td>
 
                                 <!-- Actions -->
-                                <td class="px-4 py-4 text-sm font-medium text-right whitespace-nowrap">
-                                    <div class="flex justify-center relative">
-                                        <!-- Dropdown placeholder -->
-                                        <button @click="toggleDropdown(transaction.id)" class="text-gray-500 dark:text-gray-400">
-                                            ⋮
+                                <!-- Actions -->
+                                <td class="px-4 py-4 text-sm font-medium whitespace-nowrap">
+                                    <div class="flex items-center justify-end gap-2">
+
+                                        <!-- View -->
+                                        <button
+                                            class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
                                         </button>
+
+                                        <!-- Edit -->
+                                        <button
+                                            @click="window.location.href = `/manajemen-pengguna/guru/${transaction.guru_id}/edit`"
+                                            class="w-9 h-9 flex items-center justify-center rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </button>
+
+
+
+                                        <!-- Delete -->
+                                        <button
+                                            class="w-9 h-9 flex items-center justify-center rounded-full bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3m-4 0h12" />
+                                            </svg>
+                                        </button>
+
                                     </div>
                                 </td>
                             </tr>

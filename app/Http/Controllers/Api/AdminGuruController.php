@@ -12,11 +12,13 @@ use Illuminate\Support\Str;
 
 class AdminGuruController extends Controller
 {
+    /**
+     * Bulk import guru dari API
+     */
     public function bulkImport(Request $request)
     {
         $tahun = $request->query('tahun', 2025);
 
-        // 1️⃣ Ambil data guru dari API
         $response = Http::get("https://zieapi.zielabs.id/api/getguru", [
             'tahun' => $tahun
         ]);
@@ -32,71 +34,87 @@ class AdminGuruController extends Controller
 
         $created = [];
         $skipped = [];
+        $updated = [];
 
-        // 2️⃣ Mulai transaction supaya aman
-        DB::transaction(function () use ($gurusApi, &$created, &$skipped) {
-
-            $toInsert = [];
+        DB::transaction(function () use ($gurusApi, &$created, &$skipped, &$updated) {
 
             foreach ($gurusApi as $guruData) {
 
-                // Cek apakah sudah ada
-                $exists = User::where('guru_id', $guruData['guru_id'])
-                    ->orWhere('email', $guruData['email'])
-                    ->exists();
+                // Pastikan key ada (biar nggak error kalau API berubah)
+                $guruId = $guruData['guru_id'] ?? null;
+                $email  = $guruData['email'] ?? null;
 
-                if ($exists) {
-                    $skipped[] = $guruData['guru_id'];
+                if (!$guruId || !$email) {
+                    $skipped[] = [
+                        'guru_id' => $guruId,
+                        'reason' => 'guru_id atau email tidak valid'
+                    ];
                     continue;
                 }
 
-                // Password random
-                $password = Str::random(8);
+                $user = User::where('guru_id', $guruId)->first();
 
-                $toInsert[] = [
-                    'name' => $guruData['nama'],
-                    'email' => $guruData['email'],
-                    'password' => Hash::make($password),
-                    'role' => 'guru',
-                    'guru_id' => $guruData['guru_id'],
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                    'plain_password' => $password // opsional, buat tracking
+                // === JIKA BELUM ADA → CREATE BARU ===
+                if (!$user) {
+
+                    $plainPassword = Str::random(8);
+
+                    $user = User::create([
+                        'name' => $guruData['nama'] ?? 'Tanpa Nama',
+                        'email' => $email,
+                        'password' => Hash::make($plainPassword),
+                        'role' => 'guru',
+                        'guru_id' => $guruId,
+                        'nip' => $guruData['nip'] ?? null,
+                        'nuptk' => $guruData['nuptk'] ?? null,
+                        'jenis_kelamin' => $guruData['jenis_kelamin'] ?? null,
+                    ]);
+
+                    $created[] = [
+                        'guru_id' => $guruId,
+                        'email' => $email,
+                        'password' => $plainPassword
+                    ];
+
+                    continue;
+                }
+
+                // === JIKA SUDAH ADA → UPDATE DATA (SYNC) ===
+                $user->update([
+                    'name' => $guruData['nama'] ?? $user->name,
+                    'email' => $email,
+                    'nip' => $guruData['nip'] ?? $user->nip,
+                    'nuptk' => $guruData['nuptk'] ?? $user->nuptk,
+                    'jenis_kelamin' => $guruData['jenis_kelamin'] ?? $user->jenis_kelamin,
+                ]);
+
+                $updated[] = [
+                    'guru_id' => $guruId,
+                    'email' => $email
                 ];
-
-                $created[] = [
-                    'guru_id' => $guruData['guru_id'],
-                    'email' => $guruData['email'],
-                    'password' => $password
-                ];
-            }
-
-            // 3️⃣ Bulk insert → lebih cepat
-            if (!empty($toInsert)) {
-                // Hapus field plain_password sebelum insert ke DB asli kalau gak ada kolomnya
-                foreach ($toInsert as &$item) unset($item['plain_password']);
-                User::insert($toInsert);
             }
         });
 
         return response()->json([
             'message' => 'Bulk import guru selesai',
             'created_count' => count($created),
+            'updated_count' => count($updated),
             'skipped_count' => count($skipped),
             'created' => $created,
+            'updated' => $updated,
             'skipped' => $skipped
         ]);
     }
 
-    // GET /api/admin/guru
+    /**
+     * GET /api/admin/guru
+     * List semua guru (gabungan database + API)
+     */
     public function index(Request $request)
     {
-        $tahun = $request->query('tahun', 2025); // default 2025
+        $tahun = $request->query('tahun', 2025);
 
-        // 1) Ambil semua guru dari API
-        $response = Http::get("https://zieapi.zielabs.id/api/getguru", [
-            'tahun' => $tahun
-        ]);
+        $response = Http::get("https://zieapi.zielabs.id/api/getguru", ['tahun' => $tahun]);
 
         if ($response->failed()) {
             return response()->json([
@@ -107,11 +125,8 @@ class AdminGuruController extends Controller
         }
 
         $gurusApi = collect($response->json());
-
-        // 2) Ambil semua users dengan role guru
         $users = User::where('role', 'guru')->get();
 
-        // 3) Gabungkan data users + API Guru
         $data = $users->map(function ($user) use ($gurusApi) {
             $guruData = $gurusApi->firstWhere('guru_id', $user->guru_id);
 
@@ -119,10 +134,10 @@ class AdminGuruController extends Controller
                 'id' => $user->id,
                 'email' => $user->email,
                 'guru_id' => $user->guru_id,
-                'name' => $guruData['nama'] ?? $user->name,
-                'nuptk' => $guruData['nuptk'] ?? null,
-                'nip' => $guruData['nip'] ?? null,
-                'jenis_kelamin' => $guruData['jenis_kelamin'] ?? null,
+                'name' => $user->name ?? ($guruData['nama'] ?? null),
+                'nuptk' => $user->nuptk ?? ($guruData['nuptk'] ?? null),
+                'nip' => $user->nip ?? ($guruData['nip'] ?? null),
+                'jenis_kelamin' => $user->jenis_kelamin ?? ($guruData['jenis_kelamin'] ?? null),
                 'created_at' => $user->created_at->format('Y-m-d H:i:s')
             ];
         });
@@ -133,41 +148,53 @@ class AdminGuruController extends Controller
         ]);
     }
 
-    // POST /api/admin/guru
-public function store(Request $request)
-{
-    $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|email|unique:users,email',
-        'password' => 'required|min:6',
-        'tahun' => 'sometimes|integer'
-    ]);
-
-    // ✅ 1) Generate UUID otomatis untuk guru_id
-    $guruId = (string) Str::uuid();
-
-    // ✅ 2) Buat user guru di DB lokal
-    $user = User::create([
-        'name' => $validated['name'],
-        'email' => $validated['email'],
-        'password' => Hash::make($validated['password']),
-        'role' => 'guru',
-        'guru_id' => $guruId,
-    ]);
-
-    return response()->json([
-        'message' => 'User guru berhasil ditambahkan',
-        'data' => [
-            'user' => $user->only(['id', 'name', 'email', 'role', 'guru_id'])
-        ]
-    ], 201);
-}
-
-
-    // GET /api/admin/guru/{id}
-    public function show($id)
+    /**
+     * POST /api/admin/guru
+     * Tambah guru baru
+     */
+    public function store(Request $request)
     {
-        $guru = User::where('role', 'guru')->findOrFail($id);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6',
+            'nip' => 'nullable|string|max:50',
+            'nuptk' => 'nullable|string|max:50',
+            'jenis_kelamin' => 'nullable|in:L,P'
+        ]);
+
+        $guruId = (string) Str::uuid();
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => 'guru',
+            'guru_id' => $guruId,
+            'nip' => $validated['nip'] ?? null,
+            'nuptk' => $validated['nuptk'] ?? null,
+            'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
+        ]);
+
+        return response()->json([
+            'message' => 'User guru berhasil ditambahkan',
+            'data' => $user
+        ], 201);
+    }
+
+    /**
+     * GET /api/admin/guru/{guru_id}
+     * Detail guru berdasarkan UUID
+     */
+    public function show($guru_id)
+    {
+        $guru = User::where('role', 'guru')->where('guru_id', $guru_id)->first();
+
+        if (!$guru) {
+            return response()->json([
+                'message' => 'Guru dengan UUID ini tidak ditemukan'
+            ], 404);
+        }
 
         return response()->json([
             'message' => 'Detail user guru',
@@ -175,72 +202,53 @@ public function store(Request $request)
         ]);
     }
 
-    // PUT /api/admin/guru/{id}
-    public function update(Request $request, $id)
+
+    /**
+     * PUT /api/admin/guru/{guru_id}
+     * Update guru berdasarkan UUID
+     */
+    public function update(Request $request, $guru_id)
     {
-        $guru = User::where('role', 'guru')->findOrFail($id);
+        $guru = User::where('role', 'guru')->where('guru_id', $guru_id)->first();
+
+        if (!$guru) {
+            return response()->json([
+                'message' => 'Guru dengan UUID ini tidak ditemukan'
+            ], 404);
+        }
 
         $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|email|unique:users,email,' . $guru->id,
             'password' => 'nullable|min:6',
-            'guru_id' => 'sometimes|required|uuid',
-            'tahun' => 'sometimes|integer' // opsional, default 2025
+            'nip' => 'nullable|string|max:50',
+            'nuptk' => 'nullable|string|max:50',
+            'jenis_kelamin' => 'nullable|in:L,P'
         ]);
 
-        $tahun = $validated['tahun'] ?? 2025;
-
-        // 🔹 Jika guru_id diubah, ambil data guru dari API
-        if (isset($validated['guru_id'])) {
-            $response = Http::get("https://zieapi.zielabs.id/api/getguru", [
-                'tahun' => $tahun
-            ]);
-
-            if ($response->failed()) {
-                return response()->json([
-                    'message' => 'Gagal memanggil API Guru',
-                    'status' => $response->status(),
-                    'body' => $response->body()
-                ], 500);
-            }
-
-            $gurusApi = collect($response->json());
-            $guruData = $gurusApi->firstWhere('guru_id', $validated['guru_id']);
-
-            if (!$guruData) {
-                return response()->json([
-                    'message' => 'Guru tidak ditemukan di API Guru'
-                ], 404);
-            }
-
-            // Update nama otomatis dari API Guru
-            $guru->name = $guruData['nama'];
-            $guru->guru_id = $validated['guru_id'];
-        }
-
-        // 🔹 Update field lain
-        if (isset($validated['email'])) {
-            $guru->email = $guruData['email'];
-        }
-
-        if (!empty($validated['password'])) {
-            $guru->password = Hash::make($validated['password']);
-        }
+        if (isset($validated['name'])) $guru->name = $validated['name'];
+        if (isset($validated['email'])) $guru->email = $validated['email'];
+        if (!empty($validated['password'])) $guru->password = Hash::make($validated['password']);
+        if (array_key_exists('nip', $validated)) $guru->nip = $validated['nip'];
+        if (array_key_exists('nuptk', $validated)) $guru->nuptk = $validated['nuptk'];
+        if (array_key_exists('jenis_kelamin', $validated)) $guru->jenis_kelamin = $validated['jenis_kelamin'];
 
         $guru->save();
 
         return response()->json([
             'message' => 'User guru berhasil diupdate',
-            'data' => [
-                'user' => $guru->only(['id', 'name', 'email', 'role', 'guru_id']),
-                'guru_api' => $guruData ?? null
-            ]
+            'data' => $guru
         ]);
     }
 
-    // DELETE /api/admin/guru/{id}
-    public function destroy($id)
+
+    /**
+     * DELETE /api/admin/guru/{guru_id}
+     * Hapus guru berdasarkan UUID
+     */
+    public function destroy($guru_id)
     {
-        $guru = User::where('role', 'guru')->findOrFail($id);
+        $guru = User::where('role', 'guru')->where('guru_id', $guru_id)->firstOrFail();
         $guru->delete();
 
         return response()->json([

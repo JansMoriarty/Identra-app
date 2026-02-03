@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Models\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -74,6 +75,16 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         ]);
     })->name('guru.create');
 
+
+    Route::get('/manajemen-pengguna/guru/{guru_id}/edit', function ($guru_id) {
+        // cek apakah UUID ada di DB
+        $exists = User::where('role', 'guru')->where('guru_id', $guru_id)->exists();
+
+        return view('pages.manajemen_pengguna.guru.edit', [
+            'title' => 'Edit Guru',
+            'guru_id' => $exists ? $guru_id : null
+        ]);
+    })->name('guru.edit');
 
 
     Route::get(
