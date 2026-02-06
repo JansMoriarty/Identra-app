@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PositionController;
+use App\Http\Controllers\GuruPositionController;
 use App\Models\User;
 
 /*
@@ -51,6 +52,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/calendar', fn() => view('pages.calender', ['title' => 'Calendar']))->name('calendar');
     Route::get('/form-elements', fn() => view('pages.form.form-elements', ['title' => 'Form Elements']))->name('form-elements');
     Route::get('/blank', fn() => view('pages.blank', ['title' => 'Face Recognize']))->name('blank');
+
+    // Route untuk Master Jabatan (yang kita buat sebelumnya)
+    Route::resource('positions', PositionController::class);
+
+    // Route untuk Plotting Jabatan Guru
+    // Kita gunakan nama 'guru-positions' agar URL-nya enak dibaca: /guru-positions
+    Route::resource('guru-positions', GuruPositionController::class);
 
     // Charts
     Route::get('/line-chart', fn() => view('pages.chart.line-chart', ['title' => 'Line Chart']))->name('line-chart');

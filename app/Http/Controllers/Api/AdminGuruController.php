@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\GuruPosition;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -119,8 +120,12 @@ class AdminGuruController extends Controller
     public function index(Request $request)
     {
         $tahun = $request->query('tahun', 2025);
+        $search = $request->query('search'); // keyword dari frontend
 
-        $response = Http::get("https://zieapi.zielabs.id/api/getguru", ['tahun' => $tahun]);
+        // 1️⃣ Panggil API pusat guru
+        $response = Http::get("https://zieapi.zielabs.id/api/getguru", [
+            'tahun' => $tahun
+        ]);
 
         if ($response->failed()) {
             return response()->json([
@@ -131,28 +136,57 @@ class AdminGuruController extends Controller
         }
 
         $gurusApi = collect($response->json());
+
+        // 2️⃣ Ambil semua guru dari DB
         $users = User::where('role', 'guru')->get();
 
-        $data = $users->map(function ($user) use ($gurusApi) {
-            $guruData = $gurusApi->firstWhere('guru_id', $user->guru_id);
+        // 3️⃣ Gabungkan data DB + API + JABATAN AKTIF
+        $data = $users
+            ->map(function ($user) use ($gurusApi) {
 
-            return [
-                'id' => $user->id,
-                'email' => $user->email,
-                'guru_id' => $user->guru_id,
-                'name' => $user->name ?? ($guruData['nama'] ?? null),
-                'nuptk' => $user->nuptk ?? ($guruData['nuptk'] ?? null),
-                'nip' => $user->nip ?? ($guruData['nip'] ?? null),
-                'jenis_kelamin' => $user->jenis_kelamin ?? ($guruData['jenis_kelamin'] ?? null),
-                'created_at' => $user->created_at->format('Y-m-d H:i:s')
-            ];
-        });
+                $guruData = $gurusApi->firstWhere('guru_id', $user->guru_id);
+
+                // 🔥 AMBIL JABATAN AKTIF GURU INI
+                $activePosition = GuruPosition::with('position')
+                    ->where('guru_id', $user->guru_id)
+                    ->where('is_active', true)
+                    ->latest()
+                    ->first();
+
+                return [
+                    'id' => $user->id,
+                    'uuid' => $user->uuid ?? $user->id,
+                    'email' => $user->email,
+                    'guru_id' => $user->guru_id,
+
+                    'nama' => $user->name ?? ($guruData['nama'] ?? null),
+                    'nuptk' => $user->nuptk ?? ($guruData['nuptk'] ?? null),
+                    'nip' => $user->nip ?? ($guruData['nip'] ?? null),
+                    'jenis_kelamin' => $user->jenis_kelamin ?? ($guruData['jenis_kelamin'] ?? null),
+
+                    // 🔥 KIRIM JABATAN KE FRONTEND
+                    'jabatan_aktif' => $activePosition?->position?->nama_jabatan,
+
+                    'created_at' => $user->created_at->format('Y-m-d H:i:s')
+                ];
+            })
+            // ✅ FILTER setelah nama tersedia
+            ->filter(function ($guru) use ($search) {
+                if (!$search) return true;
+
+                $search = strtolower($search);
+
+                return str_contains(strtolower($guru['nama'] ?? ''), $search)
+                    || str_contains(strtolower($guru['nip'] ?? ''), $search);
+            })
+            ->values();
 
         return response()->json([
             'message' => 'List user guru',
             'data' => $data
         ]);
     }
+
 
     /**
      * POST /api/admin/guru

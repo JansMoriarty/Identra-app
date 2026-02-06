@@ -52,7 +52,7 @@ class MenuHelper
                     ],
                     [
                         'name' => 'Posisi Guru',
-                        'path' => '/#',
+                        'path' => '/guru-positions',
                         'pro' => false
                     ]
                 ],

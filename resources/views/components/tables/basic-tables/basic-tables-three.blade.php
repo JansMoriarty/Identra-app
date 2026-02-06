@@ -30,15 +30,20 @@
         })
         .then(result => {
             const data = Array.isArray(result?.data) ? result.data : [];
-            this.transactions = data.map(guru => ({
-                id: guru.id,
-                guru_id: guru.guru_id,
-                name: guru.name,
-                date: guru.created_at,
-                email: guru.email,
-                category: guru.nip,
-                status: guru.jenis_kelamin === 'L' ? 'Pria' : 'Wanita'
-            }));
+            this.transactions = data.map(guru => {
+    const activePosition = guru.guru_positions?.find(p => p.is_active);
+
+    return {
+        id: guru.id,
+        guru_id: guru.guru_id,
+        name: guru.nama,
+        jabatan: activePosition?.position?.nama_jabatan ?? '—',
+        email: guru.email,
+        category: guru.nip,
+        status: guru.jenis_kelamin === 'L' ? 'Pria' : 'Wanita'
+    };
+});
+
         })
         .catch(err => {
             console.error('Fetch error:', err);
@@ -256,7 +261,7 @@
                     <thead>
                         <tr class="border-gray-200 border-y dark:border-gray-700">
                             <th class="px-4 py-3 text-start text-theme-sm text-gray-500 dark:text-gray-400">Name</th>
-                            <th class="px-4 py-3 text-start text-theme-sm text-gray-500 dark:text-gray-400">Date</th>
+                            <th class="px-4 py-3 text-start text-theme-sm text-gray-500 dark:text-gray-400">Jabatan</th>
                             <th class="px-4 py-3 text-start text-theme-sm text-gray-500 dark:text-gray-400">Email</th>
                             <th class="px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-500 capitalize">NIP</th>
                             <th class="px-4 py-3 text-start text-theme-sm text-gray-500 dark:text-gray-400">Gender</th>
@@ -282,7 +287,7 @@
 
                                 <!-- Date -->
                                 <td class="px-4 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-500 dark:text-gray-400" x-text="transaction.date"></div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400" x-text="transaction.jabatan"></div>
                                 </td>
 
                                 <!-- Email -->
