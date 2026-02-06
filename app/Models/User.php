@@ -49,4 +49,12 @@ class User extends Authenticatable
     {
         return $this->role === 'guru';
     }
+
+    public function positions()
+{
+    // Ini relasi Many to Many
+    return $this->belongsToMany(Position::class, 'guru_positions', 'guru_id', 'position_id')
+                ->withPivot('tanggal_mulai', 'tanggal_selesai', 'is_active')
+                ->withTimestamps();
+}
 }

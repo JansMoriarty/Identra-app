@@ -19,7 +19,7 @@
     init() {
         fetch('/api/admin/guru', {
             headers: {
-                'Authorization': 'Bearer 2|yOWqZpCH5ZrnNIPz6Uqs94TsmDZU8kfhGJ57ryMT159b6c6e',
+                'Authorization': 'Bearer 2|9N6IX37UNjykxCHglY0gqQHx6iD28SCzA2jrIHxn6aae1d79',
                 'Accept': 'application/json'
             },
             credentials: 'same-origin'
@@ -149,7 +149,7 @@
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer 2|yOWqZpCH5ZrnNIPz6Uqs94TsmDZU8kfhGJ57ryMT159b6c6e',
+                'Authorization': 'Bearer 2|9N6IX37UNjykxCHglY0gqQHx6iD28SCzA2jrIHxn6aae1d79',
                 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
             }
         })

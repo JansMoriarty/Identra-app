@@ -41,6 +41,23 @@ class MenuHelper
                 ],
             ],
 
+            [
+                'name' => 'Manajemen Posisi',
+                'icon' => 'ui-elements',
+                'subItems' => [
+                    [
+                        'name' => 'Daftar Posisi',
+                        'path' => '/positions',
+                        'pro' => false
+                    ],
+                    [
+                        'name' => 'Posisi Guru',
+                        'path' => '/#',
+                        'pro' => false
+                    ]
+                ],
+            ],
+
 
             [
                 'name' => 'Pages',
@@ -91,7 +108,7 @@ class MenuHelper
     {
         return [
             [
-                'title' => 'Menu',
+                'title' => 'General',
                 'items' => self::getMainNavItems()
             ],
             // [

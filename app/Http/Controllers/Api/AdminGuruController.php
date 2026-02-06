@@ -30,7 +30,13 @@ class AdminGuruController extends Controller
             ], 500);
         }
 
-        $gurusApi = collect($response->json());
+        $data = $response->json();
+
+        // Pastikan selalu berbentuk array of guru
+        $gurusApi = collect(
+            isset($data[0]) ? $data : [$data]
+        );
+
 
         $created = [];
         $skipped = [];

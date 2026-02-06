@@ -14,7 +14,11 @@ return new class extends Migration
         Schema::create('guru_positions', function (Blueprint $table) {
             $table->id();
 
+            // Sesuaikan tipe datanya dengan ID di tabel gurus
             $table->uuid('guru_id')->index();
+            // Jika tabel gurus ada di database ini, sebaiknya tambahkan foreign key:
+            // $table->foreign('guru_id')->references('id')->on('gurus')->onDelete('cascade');
+
             $table->foreignId('position_id')
                 ->constrained('positions')
                 ->cascadeOnDelete();
@@ -22,6 +26,7 @@ return new class extends Migration
             $table->date('tanggal_mulai');
             $table->date('tanggal_selesai')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->timestamps();
         });
     }
 

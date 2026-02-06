@@ -24,7 +24,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'Authorization': 'Bearer 2|yOWqZpCH5ZrnNIPz6Uqs94TsmDZU8kfhGJ57ryMT159b6c6e'
+                    'Authorization': 'Bearer 2|9N6IX37UNjykxCHglY0gqQHx6iD28SCzA2jrIHxn6aae1d79'
                 },
                 body: JSON.stringify({
                     name: this.name,
