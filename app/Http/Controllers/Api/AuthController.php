@@ -58,40 +58,48 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        // Ambil user beserta relasi jabatan aktifnya
+        $user = User::with('activePosition')->where('email', $request->email)->first();
 
+        // 1. Cek User & Password
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
                 'message' => 'Email atau password salah'
             ], 401);
         }
 
-        // PENTING: pastikan yang login adalah GURU
+        // 2. Cek Role
         if (! $user->isGuru()) {
             return response()->json([
                 'message' => 'Hanya akun guru yang bisa login di endpoint ini'
             ], 403);
         }
 
-        // Buat token khusus guru
+        // 3. Buat Token
         $token = $user->createToken('guru-mobile-token')->plainTextToken;
+
+        // 4. Ambil Nama Jabatan (Safe Navigation)
+        // Kita cek: apakah punya activePosition? Jika ya, apakah punya relasi position?
+        $namaJabatan = 'Belum Ditugaskan';
+        if ($user->activePosition && $user->activePosition->position) {
+            $namaJabatan = $user->activePosition->position->nama_jabatan;
+        }
 
         return response()->json([
             'message' => 'Login guru berhasil',
             'data' => [
                 'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                    'guru_id' => $user->guru_id,
+                    'id'            => $user->id,
+                    'name'          => $user->name,
+                    'email'         => $user->email,
+                    'role'          => $user->role,
+                    'guru_id'       => $user->guru_id,
+                    'jabatan_aktif' => $namaJabatan, // Dikirim ke Flutter
                 ],
                 'token' => $token
             ]
         ]);
     }
-
-
     // POST /api/logout
     public function logout(Request $request)
     {

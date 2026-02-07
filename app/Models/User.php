@@ -48,9 +48,11 @@ class User extends Authenticatable
     // 🔥 JABATAN AKTIF SAAT INI
     public function activePosition()
     {
+        // Mengambil satu jabatan yang sedang aktif (is_active = true)
         return $this->hasOne(GuruPosition::class, 'guru_id', 'guru_id')
-                    ->where('is_active', true)
-                    ->latest();
+            ->with('position') // Penting: meload tabel positions
+            ->where('is_active', true)
+            ->latest();
     }
 
     /** Helper */
