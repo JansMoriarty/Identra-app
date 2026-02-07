@@ -120,9 +120,8 @@ class AdminGuruController extends Controller
     public function index(Request $request)
     {
         $tahun = $request->query('tahun', 2025);
-        $search = $request->query('search'); // keyword dari frontend
+        $search = $request->query('search');
 
-        // 1️⃣ Panggil API pusat guru
         $response = Http::get("https://zieapi.zielabs.id/api/getguru", [
             'tahun' => $tahun
         ]);
@@ -137,21 +136,19 @@ class AdminGuruController extends Controller
 
         $gurusApi = collect($response->json());
 
-        // 2️⃣ Ambil semua guru dari DB
-        $users = User::where('role', 'guru')->get();
+        // 🔥 EAGER LOAD jabatan aktif SEKALIGUS (biar gak lemot)
+        $users = User::where('role', 'guru')
+            ->with(['guruPositions' => function ($q) {
+                $q->where('is_active', true)->with('position');
+            }])
+            ->get();
 
-        // 3️⃣ Gabungkan data DB + API + JABATAN AKTIF
         $data = $users
             ->map(function ($user) use ($gurusApi) {
 
                 $guruData = $gurusApi->firstWhere('guru_id', $user->guru_id);
 
-                // 🔥 AMBIL JABATAN AKTIF GURU INI
-                $activePosition = GuruPosition::with('position')
-                    ->where('guru_id', $user->guru_id)
-                    ->where('is_active', true)
-                    ->latest()
-                    ->first();
+                $activePosition = $user->guruPositions->first();
 
                 return [
                     'id' => $user->id,
@@ -163,14 +160,11 @@ class AdminGuruController extends Controller
                     'nuptk' => $user->nuptk ?? ($guruData['nuptk'] ?? null),
                     'nip' => $user->nip ?? ($guruData['nip'] ?? null),
                     'jenis_kelamin' => $user->jenis_kelamin ?? ($guruData['jenis_kelamin'] ?? null),
-
-                    // 🔥 KIRIM JABATAN KE FRONTEND
                     'jabatan_aktif' => $activePosition?->position?->nama_jabatan,
 
                     'created_at' => $user->created_at->format('Y-m-d H:i:s')
                 ];
             })
-            // ✅ FILTER setelah nama tersedia
             ->filter(function ($guru) use ($search) {
                 if (!$search) return true;
 

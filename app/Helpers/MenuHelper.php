@@ -57,50 +57,28 @@ class MenuHelper
                     ]
                 ],
             ],
-
-
-            [
-                'name' => 'Pages',
-                'icon' => 'pages',
-                'subItems' => [
-                    ['name' => 'Blank Page', 'path' => '/blank', 'pro' => false],
-                    ['name' => '404 Error', 'path' => '/error-404', 'pro' => false]
-                ],
-            ],
         ];
     }
 
     public static function getOthersItems()
     {
         return [
-            // [
-            //     'icon' => 'charts',
-            //     'name' => 'Charts',
-            //     'subItems' => [
-            //         ['name' => 'Line Chart', 'path' => '/line-chart', 'pro' => false],
-            //         ['name' => 'Bar Chart', 'path' => '/bar-chart', 'pro' => false]
-            //     ],
-            // ],
-            // [
-            //     'icon' => 'ui-elements',
-            //     'name' => 'UI Elements',
-            //     'subItems' => [
-            //         ['name' => 'Alerts', 'path' => '/alerts', 'pro' => false],
-            //         ['name' => 'Avatar', 'path' => '/avatars', 'pro' => false],
-            //         ['name' => 'Badge', 'path' => '/badge', 'pro' => false],
-            //         ['name' => 'Buttons', 'path' => '/buttons', 'pro' => false],
-            //         ['name' => 'Images', 'path' => '/image', 'pro' => false],
-            //         ['name' => 'Videos', 'path' => '/videos', 'pro' => false],
-            //     ],
-            // ],
-            // [
-            //     'icon' => 'authentication',
-            //     'name' => 'Authentication',
-            //     'subItems' => [
-            //         ['name' => 'Sign In', 'path' => '/signin', 'pro' => false],
-            //         ['name' => 'Sign Up', 'path' => '/signup', 'pro' => false],
-            //     ],
-            // ],
+
+            [
+                'name' => 'Absen Wajah',
+                'icon' => 'pages',
+                'path' => '/blank', 'pro' => false
+            ],
+            [
+                'name' => 'Kehadiran Guru',
+                'icon' => 'charts',
+                'path' => '#'
+            ],
+            [
+                'name' => 'Izin Guru',
+                'icon' => 'ui-elements',
+                'path' => '#'
+            ],
         ];
     }
 
@@ -111,10 +89,10 @@ class MenuHelper
                 'title' => 'General',
                 'items' => self::getMainNavItems()
             ],
-            // [
-            //     'title' => 'Others',
-            //     'items' => self::getOthersItems()
-            // ]
+            [
+                'title' => 'Absensi',
+                'items' => self::getOthersItems()
+            ]
         ];
     }
 

@@ -37,7 +37,7 @@
         id: guru.id,
         guru_id: guru.guru_id,
         name: guru.nama,
-        jabatan: activePosition?.position?.nama_jabatan ?? '—',
+        jabatan: guru.jabatan_aktif || 'Belum ditugaskan',
         email: guru.email,
         category: guru.nip,
         status: guru.jenis_kelamin === 'L' ? 'Pria' : 'Wanita'
