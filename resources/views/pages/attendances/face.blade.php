@@ -67,7 +67,7 @@
         <div class="flex flex-col gap-6">
 
             {{-- RECOGNITION RESULT CARD --}}
-            <div class="rounded-[28px] p-6 bg-white border border-gray-200">
+            <div class="rounded-[28px] p-6 bg-white border min-h-[300px] border-gray-200">
                 <h2 class="text-sm font-bold mb-5 text-gray-400 uppercase tracking-widest">
                     Scan Result
                 </h2>
@@ -126,20 +126,6 @@
                                 </svg>
                             </div>
                             <span class="text-sm font-semibold text-gray-700">Absen Manual</span>
-                        </div>
-                        <svg class="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path d="M9 5l7 7-7 7" />
-                        </svg>
-                    </a>
-
-                    <a href="#" class="flex items-center justify-between w-full p-4 bg-gray-50 hover:bg-gray-100 rounded-2xl transition group border border-gray-200 hover:border-orange-500/30">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 bg-orange-500/10 rounded-lg text-orange-600">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                </svg>
-                            </div>
-                            <span class="text-sm font-semibold text-gray-700">Checkout Manual</span>
                         </div>
                         <svg class="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path d="M9 5l7 7-7 7" />
@@ -286,4 +272,36 @@
         location.reload();
     });
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cek Session Success
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: "{{ session('success') }}",
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                customClass: { popup: 'rounded-[32px]' }
+            });
+        @endif
+
+        // Cek Session Error
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Opps!',
+                text: "{{ session('error') }}",
+                showConfirmButton: true,
+                confirmButtonColor: '#6366f1',
+                confirmButtonText: 'Tutup',
+                customClass: { popup: 'rounded-[32px]' }
+            });
+        @endif
+    });
+</script>
 @endpush
+

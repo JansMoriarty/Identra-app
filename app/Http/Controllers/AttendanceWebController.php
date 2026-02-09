@@ -68,7 +68,8 @@ class AttendanceWebController extends Controller
         $guruId = $request->guru_id;
         $hariIni = Carbon::now()->format('Y-m-d');
         $jamSekarang = Carbon::now()->format('H:i:s');
-        $batasMasuk = '07:30:00';
+        $batasMasuk = '12:40:00';
+
 
         $statusInput = ($jamSekarang > $batasMasuk) ? 'telat' : 'hadir';
 
@@ -91,7 +92,7 @@ class AttendanceWebController extends Controller
             ]
         );
 
-        return redirect()->route('admin.attendance.index')->with('success', 'Absensi Masuk Berhasil!');
+        return redirect()->route('kiosk.face')->with('success', 'Absensi Masuk Berhasil!');
     }
 
     private function checkoutManual($guruId)
@@ -115,6 +116,6 @@ class AttendanceWebController extends Controller
             'jam_pulang' => $jamSekarang
         ]);
 
-        return redirect()->route('admin.attendance.index')->with('success', 'Berhasil absen pulang!');
+        return redirect()->route('kiosk.face')->with('success', 'Berhasil absen pulang!');
     }
 }

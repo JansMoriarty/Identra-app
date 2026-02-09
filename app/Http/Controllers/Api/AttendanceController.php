@@ -38,7 +38,7 @@ class AttendanceController extends Controller
 
         $hariIni = Carbon::now()->format('Y-m-d');
         $jamSekarang = Carbon::now()->format('H:i:s');
-        $batasMasuk = '07:30:00';
+        $batasMasuk = '12:40:00';
 
         $existing = Attendance::where('guru_id', $request->guru_id)
             ->where('tanggal', $hariIni)
@@ -116,6 +116,29 @@ class AttendanceController extends Controller
         return response()->json([
             'message' => 'Berhasil absen pulang',
             'data' => new AttendanceResource($attendance) // <--- Bungkus dengan Resource
+        ]);
+    }
+
+    public function getAttendanceToday($guru_id)
+    {
+        $hariIni = \Carbon\Carbon::now()->format('Y-m-d');
+
+        $attendance = \App\Models\Attendance::where('guru_id', $guru_id)
+            ->where('tanggal', $hariIni)
+            ->first();
+
+        if (!$attendance) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Belum ada data absen hari ini',
+                'data' => null
+            ]);
+        }
+
+        // Menggunakan Resource yang kamu buat tadi
+        return response()->json([
+            'success' => true,
+            'data' => new \App\Http\Resources\AttendanceResource($attendance)
         ]);
     }
 }

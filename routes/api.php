@@ -12,6 +12,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
 
+    Route::get('/attendance/today/{guru_id}', [AttendanceController::class, 'getAttendanceToday']);
+
     // CRUD Guru (hanya admin)
     Route::middleware(['role:admin'])->group(function () {
         Route::get('/admin/guru', [AdminGuruController::class, 'index']);
@@ -31,5 +33,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         // Route untuk Absen Pulang (Checkout)
         Route::post('/attendance/checkout', [AttendanceController::class, 'checkout']);
+
+        
     });
 });

@@ -1,73 +1,113 @@
 @extends('layouts.kiosk')
 
 @section('content')
-<div class="min-h-screen bg-[#ffffff] text-gray-900 px-6 py-8 lg:px-20 lg:py-6">
+<div class="min-h-screen bg-white text-gray-900 px-6 py-8 lg:px-20 lg:py-6"
+    x-data="{ 
+        searchQuery: '', 
+        showDropdown: false, 
+        selectedGuru: null,
+        gurus: {{ json_encode($gurus) }},
+        get filteredGurus() {
+            if (this.searchQuery === '') return [];
+            return this.gurus.filter(g => g.name.toLowerCase().includes(this.searchQuery.toLowerCase()));
+        },
+        selectGuru(guru) {
+            this.selectedGuru = guru;
+            this.searchQuery = guru.name;
+            this.showDropdown = false;
+        }
+     }">
 
     {{-- BACK BUTTON & HEADER --}}
     <div class="flex items-center gap-6 mb-10">
-        <a href="#" class="p-4 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-all border border-gray-100 text-gray-600">
+        <a href="#" class="p-4 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-all border border-gray-200 text-gray-600">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <path d="M15 19l-7-7 7-7" />
             </svg>
         </a>
         <div>
             <h1 class="text-2xl font-black tracking-tight text-gray-800">Absensi Manual</h1>
-            <p class="text-sm text-gray-400 font-medium">Pilih nama Anda untuk melakukan absensi</p>
+            <p class="text-sm text-gray-400 font-medium">Cari nama Anda untuk melakukan absensi</p>
         </div>
     </div>
 
     <div class="max-w-4xl mx-auto">
         <form action="{{ route('attendances.store') }}" method="POST" id="manualAuthForm">
             @csrf
+
+            {{-- Hidden Input untuk menyimpan guru_id yang dipilih --}}
+            <input type="hidden" name="guru_id" :value="selectedGuru ? selectedGuru.guru_id : ''" required>
+
             <div class="grid grid-cols-1 gap-8">
 
-                {{-- SELECT GURU CARD --}}
-                <div class="rounded-[32px] p-8 bg-white border-2 border-gray-50 shadow-sm">
-                    <label class="text-xs font-black mb-6 text-gray-400 uppercase tracking-[0.2em] block">
-                        Pilih Personel
+                {{-- SEARCH GURU CARD --}}
+                <div class="rounded-[32px] p-8 bg-white border-2 border-gray-100">
+                    <label class="text-xs font-black mb-4 text-gray-400 uppercase tracking-[0.2em] block">
+                        Nama Personel
                     </label>
 
                     <div class="relative">
-                        <select name="guru_id" required ...>
-                            <option value="" disabled selected>Cari Nama Anda...</option>
-                            @foreach($gurus as $guru)
-                            {{-- Gunakan $guru->id karena itu yang akan disimpan di tabel attendance --}}
-                            {{-- Gunakan $guru->name karena itu nama kolom di tabel users kamu --}}
-                            <option value="{{ $guru->guru_id }}">{{ $guru->name }}</option>
-                            @endforeach
-                        </select>
-                        <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
+                        <input type="text"
+                            x-model="searchQuery"
+                            @focus="showDropdown = true"
+                            @input="showDropdown = true"
+                            placeholder="Ketik nama Anda..."
+                            class="w-full px-6 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-indigo-500 outline-none transition-all font-bold text-gray-800">
+
+                        {{-- Dropdown Result --}}
+                        <div x-show="showDropdown && filteredGurus.length > 0"
+                            @click.away="showDropdown = false"
+                            x-transition
+                            class="absolute z-50 w-full mt-2 bg-white border-2 border-gray-100 rounded-2xl max-h-60 overflow-y-auto overflow-hidden">
+
+                            <template x-for="guru in filteredGurus" :key="guru.guru_id">
+                                <button type="button"
+                                    @click="selectGuru(guru)"
+                                    class="w-full text-left px-6 py-4 hover:bg-indigo-50 border-b border-gray-50 last:border-0 transition-all">
+                                    <p class="font-bold text-gray-800" x-text="guru.name"></p>
+                                    <p class="text-xs text-gray-400 uppercase tracking-widest">Guru / Staff</p>
+                                </button>
+                            </template>
                         </div>
                     </div>
                 </div>
 
                 {{-- ACTION BUTTONS --}}
+                {{-- Saya hapus x-show agar selalu tampil --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
                     {{-- TOMBOL MASUK --}}
                     <button type="submit" name="status" value="hadir"
-                        class="group relative overflow-hidden rounded-[32px] p-8 bg-white border-2 border-gray-50 shadow-sm hover:border-indigo-500 transition-all text-left">
+                        {{-- Kita tambahkan logika disabled jika belum pilih guru agar form tidak error --}}
+                        :disabled="!selectedGuru"
+                        :class="!selectedGuru ? 'opacity-50 cursor-not-allowed' : ''"
+                        class="group rounded-[32px] p-8 bg-white border-2 border-gray-100 hover:border-indigo-500 transition-all text-left">
+
                         <div class="flex items-center justify-between mb-4">
                             <div class="p-4 bg-indigo-50 rounded-2xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all">
                                 <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                 </svg>
                             </div>
-                            <span class="text-indigo-100 group-hover:text-indigo-200">
-                                <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24 opacity-10">
-                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
-                                </svg>
-                            </span>
                         </div>
                         <h3 class="text-xl font-black text-gray-800">Absen Masuk</h3>
-                        <p class="text-sm text-gray-400 font-medium">Mulai jam kerja hari ini</p>
+                        {{-- Teks dinamis: jika sudah pilih muncul nama, jika belum muncul instruksi --}}
+                        <p class="text-sm text-gray-400 font-medium">
+                            <template x-if="selectedGuru">
+                                <span>Mulai jam kerja sebagai <span class="text-indigo-600" x-text="selectedGuru.name"></span></span>
+                            </template>
+                            <template x-if="!selectedGuru">
+                                <span>Pilih nama Anda terlebih dahulu</span>
+                            </template>
+                        </p>
                     </button>
 
                     {{-- TOMBOL PULANG --}}
                     <button type="submit" name="status" value="pulang"
-                        class="group relative overflow-hidden rounded-[32px] p-8 bg-white border-2 border-gray-50 shadow-sm hover:border-orange-500 transition-all text-left">
+                        :disabled="!selectedGuru"
+                        :class="!selectedGuru ? 'opacity-50 cursor-not-allowed' : ''"
+                        class="group rounded-[32px] p-8 bg-white border-2 border-gray-100 hover:border-orange-500 transition-all text-left">
+
                         <div class="flex items-center justify-between mb-4">
                             <div class="p-4 bg-orange-50 rounded-2xl text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-all">
                                 <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -84,4 +124,45 @@
         </form>
     </div>
 </div>
+
 @endsection
+
+@push('scripts')
+{{-- Tambahkan script SweetAlert2 --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Modal Sukses
+        @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: "{{ session('success') }}",
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            customClass: {
+                popup: 'rounded-[32px]',
+            }
+        });
+        @endif
+
+        // Modal Gagal (Sudah Absen)
+        @if(session('error'))
+        Swal.fire({
+            icon: 'error',
+            title: 'Opps!',
+            text: "{{ session('error') }}",
+            showConfirmButton: true,
+            confirmButtonColor: '#6366f1', // Warna indigo sesuai tema
+            confirmButtonText: 'Tutup',
+            customClass: {
+                popup: 'rounded-[32px]',
+                confirmButton: 'rounded-xl px-6 py-3 font-bold'
+            }
+        });
+        @endif
+    });
+</script>
+@endpush

@@ -141,6 +141,7 @@
                         <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 w-16 text-center">No</th>
                         <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Guru</th>
                         <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Jam Masuk</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Jam Pulang</th>
                         <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Status</th>
                         <th class="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-gray-500">Metode</th>
                     </tr>
@@ -165,6 +166,7 @@
                         <template x-for="(item, index) in items" :key="item.id || index">
                             <tr class="group hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors duration-150">
                                 <td class="px-6 py-4 text-sm text-gray-400 text-center font-mono group-hover:text-blue-500" x-text="index + 1"></td>
+
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-4">
                                         <div :class="getAvatarClasses(item.nama_guru).bg + ' ' + getAvatarClasses(item.nama_guru).text"
@@ -177,19 +179,25 @@
                                         </div>
                                     </div>
                                 </td>
+
                                 <td class="px-6 py-4 text-center">
-                                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700">
-                                        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300 font-mono" x-text="item.jam_masuk || '--:--'"></span>
+                                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-emerald-50/50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50">
+                                        <span class="text-sm font-medium text-emerald-700 dark:text-emerald-400 font-mono" x-text="item.jam_masuk || '--:--'"></span>
                                     </div>
                                 </td>
+
+                                <td class="px-6 py-4 text-center">
+                                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-orange-50/50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800/50">
+                                        <span class="text-sm font-medium text-orange-700 dark:text-orange-400 font-mono" x-text="item.jam_pulang || '--:--'"></span>
+                                    </div>
+                                </td>
+
                                 <td class="px-6 py-4 text-center">
                                     <span :class="statusColor(item.status)"
                                         class="inline-flex items-center px-3 py-1 text-[10px] font-bold uppercase rounded-full border shadow-sm ring-1 ring-inset"
                                         x-text="item.status"></span>
                                 </td>
+
                                 <td class="px-6 py-4 text-right">
                                     <span class="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-nowrap" x-text="item.metode"></span>
                                 </td>
