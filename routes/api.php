@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AdminGuruController;
+use App\Http\Controllers\Api\AttendanceController;
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/guru/login', [AuthController::class, 'loginGuru']);
@@ -21,5 +22,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         // Bulk import guru dari API
         Route::post('/admin/guru/bulk-import', [AdminGuruController::class, 'bulkImport']);
+
+        // Route untuk List Riwayat (Index)
+        Route::get('/attendance', [AttendanceController::class, 'index']);
+
+        // Route untuk Input Absen Masuk/Izin/Sakit (Store)
+        Route::post('/attendance/store', [AttendanceController::class, 'store']);
+
+        // Route untuk Absen Pulang (Checkout)
+        Route::post('/attendance/checkout', [AttendanceController::class, 'checkout']);
     });
 });

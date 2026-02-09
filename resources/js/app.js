@@ -21,7 +21,6 @@ document.addEventListener('alpine:init', () => {
     })
 })
 
-Alpine.start()
 
 window.Alpine = Alpine;
 window.ApexCharts = ApexCharts;

@@ -72,7 +72,7 @@ class MenuHelper
             [
                 'name' => 'Kehadiran Guru',
                 'icon' => 'charts',
-                'path' => '#'
+                'path' => '/attendance'
             ],
             [
                 'name' => 'Izin Guru',

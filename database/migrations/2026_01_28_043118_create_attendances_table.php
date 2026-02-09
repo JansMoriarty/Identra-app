@@ -13,19 +13,21 @@ return new class extends Migration
     {
         Schema::create('attendances', function (Blueprint $table) {
             $table->id();
-
             $table->uuid('guru_id')->index();
             $table->date('tanggal');
-
             $table->time('jam_masuk')->nullable();
             $table->time('jam_pulang')->nullable();
 
+            // Status absensi
             $table->enum('status', ['izin', 'sakit', 'hadir', 'alpha', 'telat']);
-            $table->enum('metode', ['face'])->default('face');
+
+            // Tambahkan 'manual' di sini
+            $table->enum('metode', ['face', 'manual'])->default('manual');
+
+            // Penting untuk alasan izin/sakit
+            $table->text('keterangan')->nullable();
 
             $table->timestamps();
-
-            // 1 guru hanya boleh 1 absensi per hari
             $table->unique(['guru_id', 'tanggal']);
         });
     }

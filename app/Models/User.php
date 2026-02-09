@@ -55,6 +55,11 @@ class User extends Authenticatable
             ->latest();
     }
 
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class, 'guru_id', 'guru_id');
+    }
+
     /** Helper */
     public function isAdmin(): bool
     {
