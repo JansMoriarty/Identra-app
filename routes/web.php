@@ -52,7 +52,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // TailAdmin Pages & UI Elements
     Route::get('/calendar', fn() => view('pages.calender', ['title' => 'Calendar']))->name('calendar');
     Route::get('/form-elements', fn() => view('pages.form.form-elements', ['title' => 'Form Elements']))->name('form-elements');
-    Route::get('/blank', fn() => view('pages.blank', ['title' => 'Face Recognize']))->name('blank');
+    Route::get('/kiosk/face-recognition', fn() => view('pages.attendances.face', ['title' => 'Face Recognize']))->name('blank');
+    // 2. Halaman Absensi Manual
+    Route::get('/kiosk/manual', [AttendanceWebController::class, 'manual'])->name('attendances.manual');
 
     // Route untuk Master Jabatan (yang kita buat sebelumnya)
     Route::resource('positions', PositionController::class);
@@ -62,6 +64,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('guru-positions', GuruPositionController::class);
 
     Route::get('/attendance', [AttendanceWebController::class, 'index'])->name('admin.attendance.index');
+
+    Route::post('/attendances/store', [AttendanceWebController::class, 'store'])->name('attendances.store');
+
+
 
     // Charts
     Route::get('/line-chart', fn() => view('pages.chart.line-chart', ['title' => 'Line Chart']))->name('line-chart');
@@ -83,4 +89,4 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 | KIOSK (NO LOGIN WEB)
 |--------------------------------------------------------------------------
 */
-Route::get('/kiosk/face', fn() => view('pages.kiosk.face-recognition', ['title' => 'Face Recognition']))->name('kiosk.face');
+// Route::get('/kiosk/face', fn() => view('pages.kiosk.face-recognition', ['title' => 'Face Recognition']))->name('kiosk.face');
