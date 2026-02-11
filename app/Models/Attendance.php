@@ -11,6 +11,7 @@ class Attendance extends Model
 
     protected $fillable = [
         'guru_id',
+        'leave_request_id',
         'tanggal',
         'jam_masuk',
         'jam_pulang',

@@ -1,6 +1,6 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
 
 <div x-data="{
     attendanceData: @js($attendances) || [],
@@ -8,40 +8,44 @@
     startDate: '{{ $startDate }}',
     endDate: '{{ $endDate }}',
     
-    init() {
-        this.$nextTick(() => {
-            const config = {
-                dateFormat: 'Y-m-d',
-                locale: 'id',
-                altInput: true,
-                altFormat: 'j F Y', // Tampilan: 1 Januari 2024
-                allowInput: true
-            };
+    setupPickers() {
+    this.$nextTick(() => {
+        // Cek apakah elemen tersedia untuk menghindari error 'null'
+        if (!this.$refs.startPicker || !this.$refs.endPicker) {
+            console.warn('Elemen picker tidak ditemukan!');
+            return;
+        }
 
-            // Inisialisasi Picker Tanggal Awal
-            flatpickr(this.$refs.startPicker, {
-                ...config,
-                defaultDate: this.startDate,
-                onChange: (selectedDates, dateStr) => { this.startDate = dateStr; }
-            });
+        const config = {
+            dateFormat: 'Y-m-d',
+            // Gunakan pengecekan aman untuk locale
+            locale: typeof flatpickr.l10ns !== 'undefined' ? 'id' : 'default',
+            altInput: true,
+            altFormat: 'j F Y',
+            allowInput: true
+        };
 
-            // Inisialisasi Picker Tanggal Akhir
-            flatpickr(this.$refs.endPicker, {
-                ...config,
-                defaultDate: this.endDate,
-                onChange: (selectedDates, dateStr) => { this.endDate = dateStr; }
-            });
+        flatpickr(this.$refs.startPicker, {
+            ...config,
+            defaultDate: this.startDate,
+            onChange: (selectedDates, dateStr) => { this.startDate = dateStr; }
         });
-    },
 
-    // Di dalam x-data
+        flatpickr(this.$refs.endPicker, {
+            ...config,
+            defaultDate: this.endDate,
+            onChange: (selectedDates, dateStr) => { this.endDate = dateStr; }
+        });
+    });
+},
+
     getAvatarClasses(name) {
         const colors = [
-            { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-600 dark:text-blue-400' },
-            { bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-600 dark:text-emerald-400' },
-            { bg: 'bg-rose-100 dark:bg-rose-900/30', text: 'text-rose-600 dark:text-rose-400' },
-            { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-600 dark:text-amber-400' },
-            { bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-600 dark:text-purple-400' },
+            { bg: 'bg-blue-100', text: 'text-blue-600' },
+            { bg: 'bg-emerald-100', text: 'text-emerald-600' },
+            { bg: 'bg-rose-100', text: 'text-rose-600' },
+            { bg: 'bg-amber-100', text: 'text-amber-600' },
+            { bg: 'bg-purple-100', text: 'text-purple-600' },
         ];
         const index = (name ? name.charCodeAt(0) : 0) % colors.length;
         return colors[index];
@@ -51,35 +55,58 @@
         if (!dateStr) return '';
         let cleanStr = dateStr.toString().trim();
         if (/^\d{4}-\d{2}-\d{2}$/.test(cleanStr)) return cleanStr;
-        const months = { 'january': '01', 'february': '02', 'march': '03', 'april': '04', 'may': '05', 'june': '06', 'july': '07', 'august': '08', 'september': '09', 'october': '10', 'november': '11', 'december': '12', 'januari': '01', 'februari': '02', 'maret': '03', 'april': '04', 'mei': '05', 'juni': '06', 'juli': '07', 'agustus': '08', 'september': '09', 'oktober': '10', 'november': '11', 'desember': '12' };
-        try {
-            const parts = cleanStr.split(/\s+/);
-            if (parts.length < 3) return cleanStr;
-            const day = parts[0].padStart(2, '0');
-            const month = months[parts[1].toLowerCase()];
-            const year = parts[2];
-            return (month) ? `${year}-${month}-${day}` : cleanStr;
-        } catch (e) { return cleanStr; }
+        
+        const months = { 
+            'januari': '01', 'februari': '02', 'maret': '03', 'april': '04', 'mei': '05', 'juni': '06', 
+            'juli': '07', 'agustus': '08', 'september': '09', 'oktober': '10', 'november': '11', 'desember': '12',
+            'january': '01', 'february': '02', 'march': '03', 'may': '05', 'june': '06', 'july': '07', 'august': '08', 'october': '10'
+        };
+
+        const parts = cleanStr.split(/\s+/);
+        if (parts.length < 3) return cleanStr;
+        const day = parts[0].padStart(2, '0');
+        const month = months[parts[1].toLowerCase()];
+        const year = parts[2];
+        return month ? `${year}-${month}-${day}` : cleanStr;
     },
 
     get filteredData() {
-        if (!Array.isArray(this.attendanceData)) return [];
-        return this.attendanceData.filter(item => {
-            const itemDate = this.normalizeDate(item.tanggal);
-            const nama = (item.nama_guru || '').toLowerCase();
-            const nip = (item.nip || '').toString();
-            const matchDate = (!this.startDate || itemDate >= this.startDate) && (!this.endDate || itemDate <= this.endDate);
-            const matchSearch = nama.includes(this.search.toLowerCase()) || nip.includes(this.search);
-            return matchDate && matchSearch;
-        });
-    },
+    // Tambahkan log ini sementara untuk debug
+    // console.log('Data dari Laravel:', this.attendanceData);
+
+    return (this.attendanceData || []).filter(item => {
+        // Ambil tanggal dari kolom 'tanggal' (bukan created_at)
+        const itemDate = item.tanggal_raw || this.normalizeDate(item.tanggal);
+        
+        const nama = (item.nama_guru || '').toLowerCase();
+        const nip = (item.nip || '').toString();
+        
+        // Pastikan startDate dan endDate sinkron dengan format YYYY-MM-DD
+        const start = this.startDate;
+        const end = this.endDate;
+
+        const matchDate = (!start || itemDate >= start) && 
+                          (!end || itemDate <= end);
+                          
+        const matchSearch = nama.includes(this.search.toLowerCase()) || 
+                            nip.includes(this.search);
+
+        return matchDate && matchSearch;
+    });
+},
 
     get groupedData() {
         const groups = {};
-        this.filteredData.forEach(item => {
-            const tgl = item.tanggal;
-            if (!groups[tgl]) groups[tgl] = [];
-            groups[tgl].push(item);
+        const data = [...this.filteredData].sort((a, b) => {
+            const dateA = a.tanggal_raw || this.normalizeDate(a.tanggal);
+            const dateB = b.tanggal_raw || this.normalizeDate(b.tanggal);
+            return dateB.localeCompare(dateA);
+        });
+
+        data.forEach(item => {
+            const tglLabel = item.tanggal;
+            if (!groups[tglLabel]) groups[tglLabel] = [];
+            groups[tglLabel].push(item);
         });
         return groups;
     },
@@ -90,7 +117,7 @@
         if (s.includes('telat')) return 'bg-amber-50 text-amber-700 border-amber-200 ring-amber-600/20';
         return 'bg-rose-50 text-rose-700 border-rose-200 ring-rose-600/20';
     }
-}" x-init="init()">
+}" x-init="setupPickers()">
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
 

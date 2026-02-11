@@ -13,8 +13,8 @@ class AttendanceWebController extends Controller
     public function index(Request $request)
     {
         // 1. Ambil range tanggal, default-nya dari H-7 sampai hari ini
-        $startDate = $request->get('start_date') ?? Carbon::now()->subDays(7)->format('Y-m-d');
-        $endDate = $request->get('end_date') ?? Carbon::now()->format('Y-m-d');
+        $startDate = $request->get('start_date') ?? Carbon::now()->startOfMonth()->format('Y-m-d');
+        $endDate = $request->get('end_date') ?? Carbon::now()->endOfMonth()->format('Y-m-d');
 
         // 2. Ambil data dengan whereBetween agar masuk ke rentang tanggal
         $attendances = Attendance::with('guru')

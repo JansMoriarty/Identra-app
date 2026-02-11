@@ -13,11 +13,15 @@ class AttendanceResource extends JsonResource
         return [
             'id' => $this->id,
             'guru_id' => $this->guru_id,
-            // TAMBAHKAN INI: Ambil dari relasi guru
             'nama_guru' => $this->guru ? $this->guru->name : 'Unknown',
             'nip' => $this->guru ? $this->guru->nip : '-',
 
+            // Untuk Tampilan di Tabel
             'tanggal' => Carbon::parse($this->tanggal)->translatedFormat('d F Y'),
+
+            // PENTING: Untuk Filter di JavaScript (Alpine.js)
+            'tanggal_raw' => Carbon::parse($this->tanggal)->format('Y-m-d'),
+
             'hari' => Carbon::parse($this->tanggal)->translatedFormat('l'),
             'jam_masuk' => $this->jam_masuk ? Carbon::parse($this->jam_masuk)->format('H:i') : '--:--',
             'jam_pulang' => $this->jam_pulang ? Carbon::parse($this->jam_pulang)->format('H:i') : '--:--',
