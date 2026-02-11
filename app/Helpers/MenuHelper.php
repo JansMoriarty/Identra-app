@@ -77,7 +77,7 @@ class MenuHelper
             [
                 'name' => 'Izin Guru',
                 'icon' => 'ui-elements',
-                'path' => '#'
+                'path' => '/leave'
             ],
         ];
     }

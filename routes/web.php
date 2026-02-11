@@ -64,8 +64,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::get('/attendance', [AttendanceWebController::class, 'index'])->name('admin.attendance.index');
 
-    Route::get('/leave', [LeaveRequestWebController::class, 'index'])->name('admin.leave.index');
-    Route::patch('/leave/{id}/status', [LeaveRequestWebController::class, 'updateStatus'])->name('admin.leave.status');
+    Route::get('/leave', [LeaveRequestWebController::class, 'index'])->name('leave.index');
+    Route::patch('/leave/{id}/status', [LeaveRequestWebController::class, 'updateStatus'])->name('leave.status');
 
 
 
