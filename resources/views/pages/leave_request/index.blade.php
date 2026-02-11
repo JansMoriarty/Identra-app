@@ -1,0 +1,10 @@
+@extends('layouts.app')
+
+@section('content')
+    <x-common.page-breadcrumb pageTitle="Pengajuan Izin" />
+    <div class="space-y-6">
+        <x-common.component-card title="Izin Guru">
+            <x-tables.basic-tables.tables-izin-guru :requests="$requests"/>
+        </x-common.component-card>
+    </div>
+@endsection

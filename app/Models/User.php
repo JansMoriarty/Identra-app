@@ -12,6 +12,9 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    public $incrementing = false;
+    protected $keyType = 'string';
+
     protected $fillable = [
         'name',
         'email',
@@ -58,6 +61,27 @@ class User extends Authenticatable
     public function attendances()
     {
         return $this->hasMany(Attendance::class, 'guru_id', 'guru_id');
+    }
+
+    public function faceProfile()
+    {
+        // Kita arahkan ke model FaceProfile
+        // Foreign key di tabel face_profiles adalah 'guru_id'
+        // Local key di tabel users adalah 'id' (UUID user)
+        return $this->hasOne(FaceProfile::class, 'guru_id', 'id');
+    }
+
+    // 🔥 UNTUK GURU: Melihat daftar pengajuan izin miliknya
+    public function leaveRequests()
+    {
+        // Hubungkan 'guru_id' di tabel leave_requests dengan 'id' (UUID) di tabel users
+        return $this->hasMany(LeaveRequest::class, 'guru_id', 'guru_id');
+    }
+
+    // 🔥 UNTUK ADMIN: Melihat data apa saja yang sudah dia approve
+    public function approvedLeaves()
+    {
+        return $this->hasMany(LeaveRequest::class, 'approved_by', 'id');
     }
 
     /** Helper */

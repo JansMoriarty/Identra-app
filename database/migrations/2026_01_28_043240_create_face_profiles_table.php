@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
 
             $table->uuid('guru_id')->unique();
+            $table->string('image_path')->nullable();
             $table->longText('face_descriptor');
 
             $table->timestamps();

@@ -6,8 +6,9 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\GuruPositionController;
-use App\Models\User;
+use App\Http\Controllers\LeaveRequestWebController;
 
+use App\Models\User;
 /*
 |--------------------------------------------------------------------------
 | PUBLIC & AUTH ROUTES
@@ -62,6 +63,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('guru-positions', GuruPositionController::class);
 
     Route::get('/attendance', [AttendanceWebController::class, 'index'])->name('admin.attendance.index');
+
+    Route::get('/leave', [LeaveRequestWebController::class, 'index'])->name('admin.leave.index');
+    Route::patch('/leave/{id}/status', [LeaveRequestWebController::class, 'updateStatus'])->name('admin.leave.status');
 
 
 

@@ -1,39 +1,61 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AdminGuruController;
 use App\Http\Controllers\Api\AttendanceController;
+use App\Http\Controllers\Api\FaceRecognitionController;
+use App\Http\Controllers\Api\LeaveRequestController;
 
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
+
+// Public Routes (Tanpa Login)
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/guru/login', [AuthController::class, 'loginGuru']);
 
+// Protected Routes (Harus Login Sanctum)
 Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    Route::get('/attendance/today/{guru_id}', [AttendanceController::class, 'getAttendanceToday']);
+    /** * ROLE: GURU
+     * Hanya guru yang bisa mendaftarkan wajah dan melakukan absensi
+     */
+    Route::middleware(['role:guru'])->group(function () {
+        // Daftar Wajah Baru
+        Route::post('/attendance/store-face', [FaceRecognitionController::class, 'registerFace']);
+        
+        // Cek Kehadiran Hari Ini
+        Route::get('/attendance/today/{guru_id}', [AttendanceController::class, 'getAttendanceToday']);
+        
+        // Verifikasi Wajah (Proses Absensi) - Kita akan buat method ini selanjutnya
+        Route::post('/attendance/verify', [FaceRecognitionController::class, 'verifyFace']);
 
-    // CRUD Guru (hanya admin)
+        Route::middleware('auth:sanctum')->post('/leave-request', [LeaveRequestController::class, 'store']);
+    });
+
+
+    /** * ROLE: ADMIN
+     * Hanya admin yang bisa mengelola data master guru dan rekap absensi
+     */
     Route::middleware(['role:admin'])->group(function () {
+        
+        // CRUD Guru
         Route::get('/admin/guru', [AdminGuruController::class, 'index']);
         Route::post('/admin/guru', [AdminGuruController::class, 'store']);
         Route::get('/admin/guru/{id}', [AdminGuruController::class, 'show']);
         Route::put('/admin/guru/{id}', [AdminGuruController::class, 'update']);
         Route::delete('/admin/guru/{id}', [AdminGuruController::class, 'destroy']);
 
-        // Bulk import guru dari API
+        // Fitur Tambahan Admin
         Route::post('/admin/guru/bulk-import', [AdminGuruController::class, 'bulkImport']);
-
-        // Route untuk List Riwayat (Index)
         Route::get('/attendance', [AttendanceController::class, 'index']);
-
-        // Route untuk Input Absen Masuk/Izin/Sakit (Store)
         Route::post('/attendance/store', [AttendanceController::class, 'store']);
-
-        // Route untuk Absen Pulang (Checkout)
         Route::post('/attendance/checkout', [AttendanceController::class, 'checkout']);
-
-        
     });
 });
