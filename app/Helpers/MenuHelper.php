@@ -82,6 +82,17 @@ class MenuHelper
         ];
     }
 
+    public static function getSystemItems()
+    {
+        return [
+            [
+                'name' => 'Jam Absensi',
+                'icon' => 'charts',
+                'path' => '/attendance-rules'
+            ],
+        ];
+    }
+
     public static function getMenuGroups()
     {
         return [
@@ -92,6 +103,10 @@ class MenuHelper
             [
                 'title' => 'Absensi',
                 'items' => self::getOthersItems()
+            ],
+            [
+                'title' => 'Sistem Absensi',
+                'items' => self::getSystemItems()
             ]
         ];
     }

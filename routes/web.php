@@ -8,6 +8,7 @@ use App\Http\Controllers\PositionController;
 use App\Http\Controllers\GuruPositionController;
 use App\Http\Controllers\LeaveRequestWebController;
 use App\Http\Controllers\AttendanceRuleController;
+use App\Http\Controllers\ReportController;
 
 use App\Models\User;
 /*
@@ -70,6 +71,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::get('/attendance-rules', [AttendanceRuleController::class, 'index'])->name('attendance-rules.index');
     Route::put('/attendance-rules/update', [AttendanceRuleController::class, 'update'])->name('attendance-rules.update');
+
+    Route::get('/report/personal/{guru_id}', [ReportController::class, 'downloadPersonalReport'])->name('report.personal');
 
 
 
