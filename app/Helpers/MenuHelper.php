@@ -75,7 +75,7 @@ class MenuHelper
                 'path' => '/attendance'
             ],
             [
-                'name' => 'Izin Guru',
+                'name' => 'Pengajuan Izin',
                 'icon' => 'ui-elements',
                 'path' => '/leave'
             ],

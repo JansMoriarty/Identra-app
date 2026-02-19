@@ -68,7 +68,7 @@ class AttendanceWebController extends Controller
         $guruId = $request->guru_id;
         $hariIni = Carbon::now()->format('Y-m-d');
         $jamSekarang = Carbon::now()->format('H:i:s');
-        $batasMasuk = '12:40:00';
+        $batasMasuk = \App\Models\AttendanceRule::getValue('batas_masuk', '12:40:00');
 
 
         $statusInput = ($jamSekarang > $batasMasuk) ? 'telat' : 'hadir';
@@ -100,6 +100,10 @@ class AttendanceWebController extends Controller
         $hariIni = Carbon::now()->format('Y-m-d');
         $jamSekarang = Carbon::now()->format('H:i:s');
 
+        // 1. AMBIL ATURAN JAM PULANG DARI DATABASE
+        // Gunakan nilai default '14:00:00' jika data di database tidak ditemukan
+        $jamPulangMinimal = \App\Models\AttendanceRule::getValue('jam_pulang', '14:00:00');
+
         $attendance = Attendance::where('guru_id', $guruId)
             ->where('tanggal', $hariIni)
             ->first();
@@ -110,6 +114,11 @@ class AttendanceWebController extends Controller
 
         if ($attendance->jam_pulang) {
             return back()->with('error', 'Sudah melakukan absen pulang.');
+        }
+
+        // 2. TAMBAHKAN PENGECEKAN: Apakah sudah masuk waktu pulang?
+        if ($jamSekarang < $jamPulangMinimal) {
+            return back()->with('error', 'Belum waktunya absen pulang. Jam pulang minimal: ' . $jamPulangMinimal);
         }
 
         $attendance->update([

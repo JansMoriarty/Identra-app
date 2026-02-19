@@ -12,7 +12,7 @@ class LeaveRequestController extends Controller
 {
     public function store(Request $request)
     {
-        // 1. Validasi Input
+        // 1. Validasi Input Dasar
         $validator = Validator::make($request->all(), [
             'tanggal_mulai'   => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
@@ -25,6 +25,22 @@ class LeaveRequestController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        // --- STEP BARU: VALIDASI DUPLIKAT ---
+        $guruId = auth()->user()->guru_id;
+
+        $sudahAda = LeaveRequest::where('guru_id', $guruId)
+            ->where('tanggal_mulai', $request->tanggal_mulai)
+            ->whereIn('status', ['pending', 'disetujui']) // Cek jika statusnya belum ditolak
+            ->first();
+
+        if ($sudahAda) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda sudah membuat pengajuan ' . $sudahAda->jenis . ' untuk tanggal ini.'
+            ], 422); // Gunakan 422 agar Flutter tahu ini error validasi
+        }
+        // ------------------------------------
+
         // 2. Handle Upload File
         $fotoPath = null;
         if ($request->hasFile('lampiran_foto')) {
@@ -33,8 +49,7 @@ class LeaveRequestController extends Controller
 
         // 3. Simpan ke Database
         $leave = LeaveRequest::create([
-            // UBAH BARIS INI: Gunakan guru_id karena di model User kamu kolomnya adalah guru_id
-            'guru_id'         => auth()->user()->guru_id, 
+            'guru_id'         => $guruId,
             'tanggal_mulai'   => $request->tanggal_mulai,
             'tanggal_selesai' => $request->tanggal_selesai,
             'jenis'           => $request->jenis,

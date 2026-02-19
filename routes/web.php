@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\GuruPositionController;
 use App\Http\Controllers\LeaveRequestWebController;
+use App\Http\Controllers\AttendanceRuleController;
 
 use App\Models\User;
 /*
@@ -66,6 +67,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::get('/leave', [LeaveRequestWebController::class, 'index'])->name('leave.index');
     Route::patch('/leave/{id}/status', [LeaveRequestWebController::class, 'updateStatus'])->name('leave.status');
+
+    Route::get('/attendance-rules', [AttendanceRuleController::class, 'index'])->name('attendance-rules.index');
+    Route::put('/attendance-rules/update', [AttendanceRuleController::class, 'update'])->name('attendance-rules.update');
 
 
 
