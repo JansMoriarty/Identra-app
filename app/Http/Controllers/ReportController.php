@@ -7,39 +7,49 @@ use App\Models\Attendance;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use App\Exports\RekapGuruExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
-    // 1. LAPORAN SELURUH GURU
-    public function monthlyReport(Request $request)
+    // 1. HALAMAN REKAP KESELURUHAN (WEB VIEW)
+    public function index(Request $request)
     {
-        $month = $request->get('month', date('m'));
-        $year = $request->get('year', date('Y'));
+        // Default ke awal bulan sampai hari ini jika tidak ada filter
+        $startDate = $request->get('start', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end', Carbon::now()->format('Y-m-d'));
 
-        // Ambil semua guru
-        $gurus = User::where('role', 'guru')->get();
+        // Query Guru dengan agregasi status absen secara langsung
+        $rekapGuru = User::where('role', 'guru')
+            ->withCount([
+                'attendances as total_hadir' => fn($q) => $q->whereBetween('tanggal', [$startDate, $endDate])->where('status', 'hadir'),
+                'attendances as total_telat' => fn($q) => $q->whereBetween('tanggal', [$startDate, $endDate])->where('status', 'telat'),
+                'attendances as total_izin' => fn($q) => $q->whereBetween('tanggal', [$startDate, $endDate])->where('status', 'izin'),
+                'attendances as total_sakit' => fn($q) => $q->whereBetween('tanggal', [$startDate, $endDate])->where('status', 'sakit'),
+                'attendances as total_alpha' => fn($q) => $q->whereBetween('tanggal', [$startDate, $endDate])->where('status', 'alpha'),
+            ])
+            ->get()
+            ->map(function ($guru) {
+                // Hitung persentase kehadiran (Hadir + Telat / Total Hari Kerja)
+                // Kita asumsi hari kerja adalah total rekaman yang seharusnya ada, 
+                // atau bisa pakai angka statis (misal 22 hari)
+                $totalHadir = $guru->total_hadir + $guru->total_telat;
 
-        // Ambil data absen pada bulan & tahun terpilih
-        $reports = $gurus->map(function ($guru) use ($month, $year) {
-            $attendance = Attendance::where('guru_id', $guru->guru_id)
-                ->whereMonth('tanggal', $month)
-                ->whereYear('tanggal', $year)
-                ->get();
+                // Skenario: Hitung persentase berdasarkan durasi hari yang dipilih
+                $diffInDays = Carbon::parse(request('start'))->diffInDays(Carbon::parse(request('end'))) ?: 1;
+                $guru->persentase = round(($totalHadir / ($diffInDays + 1)) * 100);
 
-            return [
-                'nama' => $guru->name,
-                'hadir' => $attendance->where('status', 'hadir')->count(),
-                'telat' => $attendance->where('status', 'telat')->count(),
-                'izin' => $attendance->where('status', 'izin')->count(),
-                'sakit' => $attendance->where('status', 'sakit')->count(),
-                'alpha' => $attendance->where('status', 'alpha')->count(),
-            ];
-        });
+                // Pastikan tidak lebih dari 100%
+                if ($guru->persentase > 100) $guru->persentase = 100;
 
-        return view('pages.reports.monthly', compact('reports', 'month', 'year'));
+                return $guru;
+            });
+
+        // Sesuaikan path view dengan lokasi file kamu
+        return view('pages.reports.index', compact('rekapGuru', 'startDate', 'endDate'));
     }
 
-    // 2. CETAK PDF PER GURU
+    // 2. CETAK PDF PER GURU (DARI MODAL)
     public function downloadPersonalReport($guru_id, Request $request)
     {
         $guru = User::where('guru_id', $guru_id)->firstOrFail();
@@ -51,7 +61,6 @@ class ReportController extends Controller
             ->orderBy('tanggal', 'asc')
             ->get();
 
-        // Hitung Ringkasan
         $summary = [
             'hadir' => $attendances->where('status', 'hadir')->count(),
             'telat' => $attendances->where('status', 'telat')->count(),
@@ -69,5 +78,72 @@ class ReportController extends Controller
         ]);
 
         return $pdf->setPaper('a4', 'portrait')->stream("Laporan_{$guru->name}.pdf");
+    }
+
+    // 3. CETAK PDF KESELURUHAN (OPTIONAL)
+    // 3. CETAK PDF KESELURUHAN
+    public function downloadAllReport(Request $request)
+    {
+        $start = $request->get('start');
+        $end = $request->get('end');
+
+        $rekapGuru = User::where('role', 'guru')
+            ->withCount([
+                'attendances as total_hadir' => fn($q) => $q->whereBetween('tanggal', [$start, $end])->where('status', 'hadir'),
+                'attendances as total_telat' => fn($q) => $q->whereBetween('tanggal', [$start, $end])->where('status', 'telat'),
+                'attendances as total_izin' => fn($q) => $q->whereBetween('tanggal', [$start, $end])->where('status', 'izin'),
+                'attendances as total_sakit' => fn($q) => $q->whereBetween('tanggal', [$start, $end])->where('status', 'sakit'),
+                'attendances as total_alpha' => fn($q) => $q->whereBetween('tanggal', [$start, $end])->where('status', 'alpha'),
+            ])->get();
+
+        $pdf = Pdf::loadView('pages.reports.pdf_all', [
+            'rekap' => $rekapGuru,
+            'start' => $start,
+            'end' => $end
+        ]);
+
+        return $pdf->setPaper('a4', 'landscape')->stream("Rekap_Absensi_Seluruh_Guru.pdf");
+    }
+
+    private function getRekapData($start, $end)
+{
+    // Jika start/end kosong, ambil dari request atau default bulan ini
+    $start = $start ?? request('start', date('Y-m-01'));
+    $end = $end ?? request('end', date('Y-m-d'));
+
+    return User::where('role', 'guru')->get()->map(function ($guru) use ($start, $end) {
+        // Gunakan whereDate untuk memastikan perbandingan string tanggal sukses
+        $attendances = $guru->attendances()
+            ->whereDate('tanggal', '>=', $start)
+            ->whereDate('tanggal', '<=', $end)
+            ->get();
+
+        $h = $attendances->where('status', 'hadir')->count();
+        $t = $attendances->where('status', 'telat')->count();
+        $i = $attendances->whereIn('status', ['izin', 'sakit'])->count();
+        $a = $attendances->where('status', 'alpha')->count();
+        $total = $attendances->count();
+
+        return [
+            'name'        => $guru->name,
+            'nip'         => $guru->nip,
+            'total_hadir' => $h,
+            'total_telat' => $t,
+            'total_izin'  => $i,
+            'total_alpha' => $a,
+            'persentase'  => $total > 0 ? round((($h + $t) / $total) * 100) : 0,
+        ];
+    })->toArray();
+}
+
+    public function allExcel(Request $request)
+    {
+        $start = $request->get('start');
+        $end = $request->get('end');
+
+        // Ambil data rekap (sama seperti logika di PDF)
+        $rekapGuru = $this->getRekapData($request->get('start'), $request->get('end'));
+
+        return Excel::download(new RekapGuruExport($rekapGuru), "Rekap_Absensi_{$start}_to_{$end}.xlsx");
     }
 }

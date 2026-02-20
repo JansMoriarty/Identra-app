@@ -70,9 +70,14 @@ class MenuHelper
                 'path' => '/blank', 'pro' => false
             ],
             [
-                'name' => 'Kehadiran Guru',
+                'name' => 'Kehadiran Perorangan Guru',
                 'icon' => 'charts',
                 'path' => '/attendance'
+            ],
+            [
+                'name' => 'Rekapitulasi Absensi',
+                'icon' => 'pages',
+                'path' => '/reports'
             ],
             [
                 'name' => 'Pengajuan Izin',

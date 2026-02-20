@@ -73,6 +73,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::put('/attendance-rules/update', [AttendanceRuleController::class, 'update'])->name('attendance-rules.update');
 
     Route::get('/report/personal/{guru_id}', [ReportController::class, 'downloadPersonalReport'])->name('report.personal');
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    // Pastikan name rutenya sesuai dengan yang dipanggil di JavaScript: reports.allPdf
+    Route::get('/report/all-pdf', [ReportController::class, 'downloadAllReport'])->name('reports.allPdf');
+    Route::get('/report/all-excel', [ReportController::class, 'allExcel'])->name('reports.allExcel');
 
 
 
