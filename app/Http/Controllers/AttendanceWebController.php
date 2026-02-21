@@ -53,23 +53,31 @@ class AttendanceWebController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Validasi: Arahkan ke tabel 'users' kolom 'guru_id'
+        // 1. Validasi: Tambahkan latitude dan longitude agar wajib dikirim dari web
         $request->validate([
-            'guru_id'    => 'required|exists:users,guru_id', // Beritahu Laravel tabelnya 'users'
+            'guru_id'    => 'required|exists:users,guru_id',
             'status'     => 'required|in:hadir,pulang',
+            'latitude'   => 'required', // Koordinat pengabsen
+            'longitude'  => 'required', // Koordinat pengabsen
             'keterangan' => 'nullable|string',
         ]);
 
+        // 2. CEK RADIUS GEOFENCING
+        // Memastikan Admin/Perangkat Kiosk berada di area yang ditentukan
+        if (!$this->isWithinGeofence($request->latitude, $request->longitude)) {
+            return back()->with('error', 'Posisi perangkat di luar jangkauan absensi sekolah!');
+        }
+
         // Jika statusnya pulang, lempar ke fungsi checkout manual
         if ($request->status === 'pulang') {
-            return $this->checkoutManual($request->guru_id);
+            // Teruskan koordinat ke checkoutManual jika perlu validasi lokasi di sana juga
+            return $this->checkoutManual($request->guru_id, $request->latitude, $request->longitude);
         }
 
         $guruId = $request->guru_id;
-        $hariIni = Carbon::now()->format('Y-m-d');
-        $jamSekarang = Carbon::now()->format('H:i:s');
+        $hariIni = \Carbon\Carbon::now()->format('Y-m-d');
+        $jamSekarang = \Carbon\Carbon::now()->format('H:i:s');
         $batasMasuk = \App\Models\AttendanceRule::getValue('batas_masuk', '12:40:00');
-
 
         $statusInput = ($jamSekarang > $batasMasuk) ? 'telat' : 'hadir';
 
@@ -89,19 +97,24 @@ class AttendanceWebController extends Controller
                 'status'     => $statusInput,
                 'metode'     => 'manual',
                 'keterangan' => $request->keterangan,
+                // Opsional: simpan koordinat absen ke database jika kolom tersedia
+                // 'latitude' => $request->latitude,
+                // 'longitude' => $request->longitude,
             ]
         );
 
         return redirect()->route('kiosk.face')->with('success', 'Absensi Masuk Berhasil!');
     }
 
-    private function checkoutManual($guruId)
+    private function checkoutManual($guruId, $lat, $lng)
     {
-        $hariIni = Carbon::now()->format('Y-m-d');
-        $jamSekarang = Carbon::now()->format('H:i:s');
+        // Validasi Geofencing saat pulang (Opsional, tapi bagus untuk keamanan)
+        if (!$this->isWithinGeofence($lat, $lng)) {
+            return back()->with('error', 'Gagal absen pulang! Perangkat di luar jangkauan.');
+        }
 
-        // 1. AMBIL ATURAN JAM PULANG DARI DATABASE
-        // Gunakan nilai default '14:00:00' jika data di database tidak ditemukan
+        $hariIni = \Carbon\Carbon::now()->format('Y-m-d');
+        $jamSekarang = \Carbon\Carbon::now()->format('H:i:s');
         $jamPulangMinimal = \App\Models\AttendanceRule::getValue('jam_pulang', '14:00:00');
 
         $attendance = Attendance::where('guru_id', $guruId)
@@ -116,9 +129,8 @@ class AttendanceWebController extends Controller
             return back()->with('error', 'Sudah melakukan absen pulang.');
         }
 
-        // 2. TAMBAHKAN PENGECEKAN: Apakah sudah masuk waktu pulang?
         if ($jamSekarang < $jamPulangMinimal) {
-            return back()->with('error', 'Belum waktunya absen pulang. Jam pulang minimal: ' . $jamPulangMinimal);
+            return back()->with('error', 'Belum waktunya absen pulang. Minimal jam: ' . $jamPulangMinimal);
         }
 
         $attendance->update([
@@ -126,5 +138,35 @@ class AttendanceWebController extends Controller
         ]);
 
         return redirect()->route('kiosk.face')->with('success', 'Berhasil absen pulang!');
+    }
+
+    /**
+     * Helper untuk menghitung apakah koordinat masuk dalam salah satu radius lokasi
+     */
+    private function isWithinGeofence($userLat, $userLng)
+    {
+        $locations = \App\Models\Location::all();
+        $earthRadius = 6371000; // Meter
+
+        foreach ($locations as $location) {
+            $latFrom = deg2rad($userLat);
+            $lonFrom = deg2rad($userLng);
+            $latTo = deg2rad($location->latitude);
+            $lonTo = deg2rad($location->longitude);
+
+            $latDelta = $latTo - $latFrom;
+            $lonDelta = $lonTo - $lonFrom;
+
+            $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
+                cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+
+            $distance = $angle * $earthRadius;
+
+            if ($distance <= $location->radius) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

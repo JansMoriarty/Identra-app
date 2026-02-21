@@ -9,6 +9,7 @@ use App\Http\Controllers\GuruPositionController;
 use App\Http\Controllers\LeaveRequestWebController;
 use App\Http\Controllers\AttendanceRuleController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\LocationController;
 
 use App\Models\User;
 /*
@@ -77,6 +78,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // Pastikan name rutenya sesuai dengan yang dipanggil di JavaScript: reports.allPdf
     Route::get('/report/all-pdf', [ReportController::class, 'downloadAllReport'])->name('reports.allPdf');
     Route::get('/report/all-excel', [ReportController::class, 'allExcel'])->name('reports.allExcel');
+
+    Route::resource('locations', LocationController::class);
 
 
 

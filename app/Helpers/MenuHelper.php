@@ -95,6 +95,11 @@ class MenuHelper
                 'icon' => 'charts',
                 'path' => '/attendance-rules'
             ],
+            [
+                'name' => 'Lokasi Absensi',
+                'icon' => 'task',
+                'path' => '/locations'
+            ],
         ];
     }
 

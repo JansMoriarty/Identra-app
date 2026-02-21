@@ -34,6 +34,8 @@
     <div class="max-w-4xl mx-auto">
         <form action="{{ route('attendances.store') }}" method="POST" id="manualAuthForm">
             @csrf
+            <input type="hidden" name="latitude" id="lat_input">
+            <input type="hidden" name="longitude" id="lng_input">
 
             {{-- Hidden Input untuk menyimpan guru_id yang dipilih --}}
             <input type="hidden" name="guru_id" :value="selectedGuru ? selectedGuru.guru_id : ''" required>
@@ -133,7 +135,30 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Modal Sukses
+        // --- LOGIC AMBIL LOKASI OTOMATIS ---
+        function getKioskLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    document.getElementById('lat_input').value = position.coords.latitude;
+                    document.getElementById('lng_input').value = position.coords.longitude;
+                    console.log("Location fixed: " + position.coords.latitude + ", " + position.coords.longitude);
+                }, function(error) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'GPS Tidak Aktif',
+                        text: 'Aktifkan lokasi pada browser/perangkat Anda agar bisa melakukan absensi.',
+                        confirmButtonColor: '#6366f1',
+                    });
+                }, {
+                    enableHighAccuracy: true
+                });
+            }
+        }
+
+        // Panggil fungsi saat halaman dimuat
+        getKioskLocation();
+
+        // --- MODAL SUKSES ---
         @if(session('success'))
         Swal.fire({
             icon: 'success',
@@ -143,19 +168,19 @@
             timer: 3000,
             timerProgressBar: true,
             customClass: {
-                popup: 'rounded-[32px]',
+                popup: 'rounded-[32px]'
             }
         });
         @endif
 
-        // Modal Gagal (Sudah Absen)
+        // --- MODAL GAGAL (Termasuk Gagal Geofencing) ---
         @if(session('error'))
         Swal.fire({
             icon: 'error',
-            title: 'Opps!',
+            title: 'Gagal',
             text: "{{ session('error') }}",
             showConfirmButton: true,
-            confirmButtonColor: '#6366f1', // Warna indigo sesuai tema
+            confirmButtonColor: '#6366f1',
             confirmButtonText: 'Tutup',
             customClass: {
                 popup: 'rounded-[32px]',
