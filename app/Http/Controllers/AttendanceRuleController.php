@@ -30,4 +30,15 @@ class AttendanceRuleController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Berhasil diperbarui']);
     }
+
+    // Tambahkan ini di AttendanceRuleController.php
+    public function getSettings()
+    {
+        // Ambil data langsung berdasarkan kolom 'name' di database Anda
+        return response()->json([
+            // Di screenshot DB Anda namanya 'batas_masuk', bukan 'jam_masuk'
+            'jam_masuk' => \App\Models\AttendanceRule::getValue('batas_masuk'),
+            'jam_pulang' => \App\Models\AttendanceRule::getValue('jam_pulang'),
+        ]);
+    }
 }

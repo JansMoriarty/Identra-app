@@ -18,6 +18,14 @@ use App\Http\Controllers\Api\LeaveRequestController;
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/guru/login', [AuthController::class, 'loginGuru']);
 
+Route::post('/attendance/store-face', [FaceRecognitionController::class, 'registerFace']);
+
+Route::get('/face-profiles', [FaceRecognitionController::class, 'getAllFaceProfiles']);
+
+// Mengambil detail nama guru berdasarkan ID setelah wajah cocok
+Route::get('/guru-detail/{id}', [AdminGuruController::class, 'show']);
+
+
 // Protected Routes (Harus Login Sanctum)
 Route::middleware(['auth:sanctum'])->group(function () {
 
@@ -27,12 +35,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
      * Hanya guru yang bisa mendaftarkan wajah dan melakukan absensi
      */
     Route::middleware(['role:guru'])->group(function () {
-        // Daftar Wajah Baru
-        Route::post('/attendance/store-face', [FaceRecognitionController::class, 'registerFace']);
-        
+
         // Cek Kehadiran Hari Ini
         Route::get('/attendance/today/{guru_id}', [AttendanceController::class, 'getAttendanceToday']);
-        
+
         // Verifikasi Wajah (Proses Absensi) - Kita akan buat method ini selanjutnya
         Route::post('/attendance/verify', [FaceRecognitionController::class, 'verifyFace']);
 
@@ -44,7 +50,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
      * Hanya admin yang bisa mengelola data master guru dan rekap absensi
      */
     Route::middleware(['role:admin'])->group(function () {
-        
+
         // CRUD Guru
         Route::get('/admin/guru', [AdminGuruController::class, 'index']);
         Route::post('/admin/guru', [AdminGuruController::class, 'store']);

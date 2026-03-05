@@ -6,72 +6,83 @@ use App\Http\Controllers\Controller;
 use App\Models\FaceProfile;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 
 class FaceRecognitionController extends Controller
 {
     public function registerFace(Request $request)
     {
-        $request->validate([
-            'guru_id' => 'required|exists:users,guru_id', // BERUBAH: validasi ke kolom uuid
-            'image'   => 'required|image|mimes:jpeg,png,jpg|max:5120',
+        // Paksa Laravel menganggap ini request JSON agar jika validasi gagal, return-nya JSON
+        $request->headers->set('Accept', 'application/json');
+
+        // Gunakan Validator manual agar kita bisa menangkap error-nya dengan pasti
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'guru_id'         => 'required',
+            'face_descriptor' => 'required',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
 
         try {
             return DB::transaction(function () use ($request) {
-                // BERUBAH: Cari user berdasarkan kolom guru_id (UUID)
-                $user = User::where('guru_id', $request->guru_id)->firstOrFail();
+                // Cari user berdasarkan guru_id. 
+                // PASTIKAN kolom 'guru_id' benar-benar ada di tabel 'users'
+                $user = User::where('guru_id', $request->guru_id)->first();
 
-                $file = $request->file('image');
-
-                // 1. Simpan Foto ke Storage
-                // Gunakan $user->guru_id di nama file agar lebih jelas
-                $fileName = 'face_' . $user->guru_id . '_' . time() . '.' . $file->getClientOriginalExtension();
-                $path = $file->storeAs('face_profiles', $fileName, 'public');
-                $fullPath = storage_path('app/public/' . $path);
-
-                // 2. Eksekusi Node.js AI
-                $nodeScript = base_path('face-processor/process.js');
-                $command = "node \"$nodeScript\" \"$fullPath\" 2>&1";
-                $output = shell_exec($command);
-
-                $result = json_decode($output, true);
-
-                // 3. Validasi Hasil AI
-                if (!$result || isset($result['error']) || !is_array($result)) {
-                    Storage::disk('public')->delete($path);
+                if (!$user) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Gagal mendeteksi wajah: ' . ($result['error'] ?? 'Foto tidak jelas'),
-                        'debug'   => $output
-                    ], 422);
+                        'message' => 'Guru dengan ID ' . $request->guru_id . ' tidak ditemukan di tabel users.'
+                    ], 404);
                 }
 
-                // 4. Simpan ke Database
-                // Tetap pakai $user->id (77) untuk relasi tabel face_profiles
+                $descriptor = $request->face_descriptor;
+
+                // Jika dari JS dikirim lewat JSON.stringify, biasanya dia masuk sebagai string
+                if (is_string($descriptor)) {
+                    $descriptor = json_decode($descriptor, true);
+                }
+
+                if (!is_array($descriptor)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Format descriptor tidak valid (harus array).'
+                    ], 400);
+                }
+
                 $faceProfile = FaceProfile::updateOrCreate(
-                    ['guru_id' => $user->guru_id], // ✅ BENAR (UUID)
+                    ['guru_id' => $user->guru_id],
                     [
-                        'image_path'      => $path,
-                        'face_descriptor' => $result,
+                        'face_descriptor' => json_encode($descriptor),
                     ]
                 );
 
-
                 return response()->json([
                     'success' => true,
-                    'message' => 'Registrasi wajah ' . $user->name . ' berhasil!', // Ganti ke $user->nama sesuai response JSON kamu
-                    'data'    => [
-                        'image_url' => asset('storage/' . $path)
-                    ]
+                    'message' => 'Registrasi wajah ' . $user->name . ' berhasil!',
                 ], 200);
             });
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Server Error: ' . $e->getMessage()
+                'message' => 'Error Server: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function getAllFaceProfiles()
+    {
+        // Gunakan join atau eager loading untuk mengambil nama dari tabel users
+        $profiles = \App\Models\FaceProfile::join('users', 'face_profiles.guru_id', '=', 'users.guru_id')
+            ->select('face_profiles.guru_id', 'face_profiles.face_descriptor', 'users.name')
+            ->get();
+
+        return response()->json($profiles);
     }
 }

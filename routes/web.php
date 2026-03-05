@@ -10,6 +10,7 @@ use App\Http\Controllers\LeaveRequestWebController;
 use App\Http\Controllers\AttendanceRuleController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\Api\AdminGuruController;
 
 use App\Models\User;
 /*
@@ -81,7 +82,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::resource('locations', LocationController::class);
 
+    Route::get('/admin/guru/{id}/register-face', [AdminGuruController::class, 'registerFaceView'])->name('admin.guru.register-face');
 
+    Route::get('/attendance-settings', [AttendanceRuleController::class, 'getSettings'])->name('attendance-settings');
 
     // Charts
     Route::get('/line-chart', fn() => view('pages.chart.line-chart', ['title' => 'Line Chart']))->name('line-chart');

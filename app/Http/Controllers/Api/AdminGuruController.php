@@ -236,6 +236,15 @@ class AdminGuruController extends Controller
         ]);
     }
 
+    public function registerFaceView($id)
+    {
+        // Cari data guru berdasarkan ID
+        $guru = \App\Models\User::findOrFail($id);
+
+        // Sesuaikan path view dengan lokasi file kamu
+        return view('pages.attendances.register_face', compact('guru'));
+    }
+
 
     /**
      * PUT /api/admin/guru/{guru_id}
