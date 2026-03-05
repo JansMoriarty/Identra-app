@@ -25,6 +25,8 @@ Route::get('/face-profiles', [FaceRecognitionController::class, 'getAllFaceProfi
 // Mengambil detail nama guru berdasarkan ID setelah wajah cocok
 Route::get('/guru-detail/{id}', [AdminGuruController::class, 'show']);
 
+Route::post('/attendance/scan-face', [App\Http\Controllers\Api\AttendanceController::class, 'scanFace']);
+
 
 // Protected Routes (Harus Login Sanctum)
 Route::middleware(['auth:sanctum'])->group(function () {

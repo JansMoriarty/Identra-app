@@ -64,15 +64,28 @@
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <form action="{{ route('attendances.store') }}" method="POST">
+                        <form id="formMasuk">
                             @csrf
-                            <input type="hidden" name="status" value="hadir"><input type="hidden" name="guru_id" class="guru_id_input">
-                            <button type="submit" class="w-full py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold">Masuk</button>
-                        </form>
-                        <form action="#" method="POST">
-                            @csrf
+                            <input type="hidden" name="status" value="hadir">
                             <input type="hidden" name="guru_id" class="guru_id_input">
-                            <button type="submit" class="w-full py-3 bg-orange-500 text-white rounded-xl text-sm font-bold">Pulang</button>
+                            <input type="hidden" name="latitude" class="lat_input">
+                            <input type="hidden" name="longitude" class="lng_input">
+
+                            <button type="submit" class="w-full py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition">
+                                Masuk
+                            </button>
+                        </form>
+
+                        <form id="formPulang">
+                            @csrf
+                            <input type="hidden" name="status" value="pulang">
+                            <input type="hidden" name="guru_id" class="guru_id_input">
+                            <input type="hidden" name="latitude" class="lat_input">
+                            <input type="hidden" name="longitude" class="lng_input">
+
+                            <button type="submit" class="w-full py-3 bg-orange-500 text-white rounded-xl text-sm font-bold hover:bg-orange-600 transition">
+                                Pulang
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -154,6 +167,30 @@
         return v.map(val => val / norm);
     };
 
+    function prepareAttendance(detectedGuruId) {
+        // 1. Isi ID Guru ke semua form
+        document.querySelectorAll('.guru_id_input').forEach(el => el.value = detectedGuruId);
+
+        // 2. Ambil Lokasi Perangkat
+        if (navigator.geolocation) {
+            // Gunakan getCurrentPosition atau watchPosition
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    // Gunakan querySelectorAll karena ada dua form (Masuk & Pulang)
+                    document.querySelectorAll('.lat_input').forEach(el => el.value = position.coords.latitude);
+                    document.querySelectorAll('.lng_input').forEach(el => el.value = position.coords.longitude);
+
+                    console.log("📍 Lokasi Terkunci:", position.coords.latitude, position.coords.longitude);
+                },
+                (error) => {
+                    alert("Gagal mendapatkan lokasi. Pastikan izin GPS aktif di browser!");
+                }, {
+                    enableHighAccuracy: true
+                } // Tambahkan ini agar lebih akurat untuk geofencing
+            );
+        }
+    }
+
     function updateRealtimeStatus() {
         const now = new Date();
         const h = now.getHours();
@@ -178,6 +215,84 @@
             }
         }
     }
+
+    const handleAttendanceSubmit = async (e) => {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        if (!data.guru_id) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Wajah belum teridentifikasi',
+                text: 'Silakan posisikan wajah Anda dengan benar.',
+                confirmButtonColor: '#4f46e5'
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: 'Memproses...',
+            text: 'Mohon tunggu sebentar',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        try {
+            const response = await fetch("/api/attendance/scan-face", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json' // WAJIB agar Laravel membalas JSON jika terjadi error
+                },
+                body: JSON.stringify(data)
+            });
+
+            // Cek apakah responnya beneran JSON
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                // Jika yang balik malah HTML (DOCTYPE), kita tangkap di sini
+                throw new TypeError("Server tidak mengirim JSON. Masalah kemungkinan di Route/Controller.");
+            }
+
+            const result = await response.json();
+
+            if (response.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: result.message,
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Absen',
+                    text: result.message || 'Terjadi kesalahan.',
+                    confirmButtonColor: '#ef4444'
+                });
+            }
+        } catch (error) {
+            console.error("Error Detail:", error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Sistem Error',
+                text: error.message === "Server tidak mengirim JSON. Masalah kemungkinan di Route/Controller." ?
+                    "Server mengirim respon HTML. Pastikan Anda sudah login dan Route benar." : "Gagal terhubung ke server.",
+            });
+        }
+    };
+
+    // Pasang event listener ke kedua form
+    document.getElementById('formMasuk').addEventListener('submit', handleAttendanceSubmit);
+    document.getElementById('formPulang').addEventListener('submit', handleAttendanceSubmit);
 
     setInterval(updateRealtimeStatus, 1000);
 
@@ -210,7 +325,7 @@
             }).filter(d => d !== null);
 
             if (labeledDescriptors.length > 0) {
-                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.35);
+                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
                 isModelsLoaded = true; // Tandai sudah siap
 
                 // Setelah siap, ubah ke status awal (No Face)
@@ -222,6 +337,31 @@
             statusText.innerText = "Sync Error";
             statusDot.className = "w-2 h-2 rounded-full bg-red-700";
             console.error("Data Load Error:", e);
+        }
+    }
+
+    async function sendAttendanceRequest(detectedGuruId, type = 'hadir') {
+        try {
+            const response = await fetch("/api/attendance/scan-face", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    // 'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert(result.message); // Tampilkan sukses (Ganti dengan Toast/Modal agar lebih cantik)
+                location.reload(); // Refresh untuk reset scanner
+            } else {
+                alert(result.message); // Tampilkan pesan error (Misal: Belum waktunya pulang)
+            }
+        } catch (error) {
+            console.error("Error sending attendance:", error);
         }
     }
 
@@ -317,6 +457,8 @@
                 document.querySelectorAll('.guru_id_input').forEach(input => {
                     input.value = guruId;
                 });
+
+                prepareAttendance(guruId);
 
                 placeholderResult.classList.add('hidden');
                 userResult.classList.remove('hidden');

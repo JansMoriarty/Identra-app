@@ -33,6 +33,7 @@
     </main>
     
     <script src="{{ asset('js/face-api.min.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     @stack('scripts')
 </body>

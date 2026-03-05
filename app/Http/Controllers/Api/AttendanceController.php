@@ -141,4 +141,91 @@ class AttendanceController extends Controller
             'data' => new \App\Http\Resources\AttendanceResource($attendance)
         ]);
     }
+
+    public function scanFace(Request $request)
+    {
+        try {
+            // 1. Gunakan Validator::make agar tidak terjadi auto-redirect jika validasi gagal
+            $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+                'guru_id' => 'required',
+                'status'  => 'required|in:hadir,pulang',
+                'latitude' => 'nullable',
+                'longitude' => 'nullable'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal: ' . implode(', ', $validator->errors()->all())
+                ], 422);
+            }
+
+            $guruId = $request->guru_id;
+            $hariIni = \Carbon\Carbon::now()->format('Y-m-d');
+            $jamSekarang = \Carbon\Carbon::now()->format('H:i:s');
+
+            // 2. LOGIKA ABSEN PULANG
+            if ($request->status === 'pulang') {
+                $jamPulangMin = \App\Models\AttendanceRule::getValue('jam_pulang', '14:00:00');
+
+                $attendance = \App\Models\Attendance::where('guru_id', $guruId)
+                    ->where('tanggal', $hariIni)
+                    ->first();
+
+                if (!$attendance) {
+                    return response()->json(['success' => false, 'message' => 'Anda belum absen masuk hari ini!'], 422);
+                }
+                if ($attendance->jam_pulang) {
+                    return response()->json(['success' => false, 'message' => 'Anda sudah absen pulang.'], 422);
+                }
+                if ($jamSekarang < $jamPulangMin) {
+                    return response()->json(['success' => false, 'message' => 'Belum waktunya pulang. Minimal jam ' . $jamPulangMin], 422);
+                }
+
+                $attendance->update(['jam_pulang' => $jamSekarang]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Berhasil Absen Pulang!',
+                    'data' => new \App\Http\Resources\AttendanceResource($attendance)
+                ]);
+            }
+
+            // 3. LOGIKA ABSEN MASUK
+            $batasMasuk = \App\Models\AttendanceRule::getValue('batas_masuk', '08:00:00');
+            $statusInput = ($jamSekarang > $batasMasuk) ? 'telat' : 'hadir';
+
+            $existing = \App\Models\Attendance::where('guru_id', $guruId)
+                ->where('tanggal', $hariIni)
+                ->first();
+
+            if ($existing && $existing->status !== 'alpha') {
+                return response()->json(['success' => false, 'message' => 'Anda sudah absen masuk hari ini.'], 422);
+            }
+
+            $attendance = \App\Models\Attendance::updateOrCreate(
+                ['guru_id' => $guruId, 'tanggal' => $hariIni],
+                [
+                    'jam_masuk' => $jamSekarang,
+                    'status'    => $statusInput,
+                    'metode'    => 'face',
+                    'keterangan' => 'Absensi via Face Recognition Kiosk',
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Absensi Masuk Berhasil! Status: ' . ucfirst($statusInput),
+                'data' => new \App\Http\Resources\AttendanceResource($attendance)
+            ]);
+        } catch (\Throwable $e) {
+            // JIKA ADA ERROR CODING/DATABASE, TANGKAP DAN KIRIM SEBAGAI JSON
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan server!',
+                'debug' => $e->getMessage(), // Hapus ini jika sudah masuk tahap produksi
+                'line' => $e->getLine()
+            ], 500);
+        }
+    }
 }
