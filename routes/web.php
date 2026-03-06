@@ -86,6 +86,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::get('/attendance-settings', [AttendanceRuleController::class, 'getSettings'])->name('attendance-settings');
 
+    Route::get('/subjects', function () {
+        // Sesuaikan dengan folder: page > subjects > index
+        return view('pages.subjects.index'); 
+    })->name('admin.subjects.index');
+
     // Charts
     Route::get('/line-chart', fn() => view('pages.chart.line-chart', ['title' => 'Line Chart']))->name('line-chart');
     Route::get('/bar-chart', fn() => view('pages.chart.bar-chart', ['title' => 'Bar Chart']))->name('bar-chart');

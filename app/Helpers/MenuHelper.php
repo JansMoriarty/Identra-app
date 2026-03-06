@@ -102,6 +102,16 @@ class MenuHelper
             ],
         ];
     }
+    public static function getMapelItems()
+    {
+        return [
+            [
+                'name' => 'Mata Pelajaran',
+                'icon' => 'charts',
+                'path' => '/subjects'
+            ],
+        ];
+    }
 
     public static function getMenuGroups()
     {
@@ -117,6 +127,10 @@ class MenuHelper
             [
                 'title' => 'Sistem Absensi',
                 'items' => self::getSystemItems()
+            ],
+            [
+                'title' => 'Manajemen Mapel',
+                'items' => self::getMapelItems()
             ]
         ];
     }

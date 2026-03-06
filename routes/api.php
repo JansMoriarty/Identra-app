@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\AdminGuruController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\FaceRecognitionController;
 use App\Http\Controllers\Api\LeaveRequestController;
+use App\Http\Controllers\Api\SubjectController;
+use App\Http\Controllers\Api\ClassroomController;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,5 +67,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/attendance', [AttendanceController::class, 'index']);
         Route::post('/attendance/store', [AttendanceController::class, 'store']);
         Route::post('/attendance/checkout', [AttendanceController::class, 'checkout']);
+
+        Route::apiResource('subjects', SubjectController::class);
+        Route::apiResource('classrooms', ClassroomController::class);
     });
 });

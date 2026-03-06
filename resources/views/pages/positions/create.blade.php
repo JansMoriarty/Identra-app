@@ -19,7 +19,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer 1|Gj95onahnRVQ47cazJZJ44iLOwuGZ9yXTrvalqB0e06352dd',
+                    'Authorization': 'Bearer 1|Sg8C2z2Oo2wny9FJy4RHtuK9doSo93yPoWO1JTUN58667636',
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
                 },

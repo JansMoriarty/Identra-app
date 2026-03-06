@@ -325,7 +325,7 @@
             }).filter(d => d !== null);
 
             if (labeledDescriptors.length > 0) {
-                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
+                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.5);
                 isModelsLoaded = true; // Tandai sudah siap
 
                 // Setelah siap, ubah ke status awal (No Face)

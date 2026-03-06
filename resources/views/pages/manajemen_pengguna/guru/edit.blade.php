@@ -26,7 +26,7 @@
             const res = await fetch(`/api/admin/guru/${this.guruId}`, {
                 headers: {
                     'Accept': 'application/json',
-                    'Authorization': 'Bearer 1|Gj95onahnRVQ47cazJZJ44iLOwuGZ9yXTrvalqB0e06352dd'
+                    'Authorization': 'Bearer 1|Sg8C2z2Oo2wny9FJy4RHtuK9doSo93yPoWO1JTUN58667636'
                 }
             });
 
@@ -56,7 +56,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'Authorization': 'Bearer 1|Gj95onahnRVQ47cazJZJ44iLOwuGZ9yXTrvalqB0e06352dd'
+                    'Authorization': 'Bearer 1|Sg8C2z2Oo2wny9FJy4RHtuK9doSo93yPoWO1JTUN58667636'
                 },
                 body: JSON.stringify({
                     name: this.name,
