@@ -9,6 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
+    // File: xxxx_xx_xx_create_users_table.php
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
@@ -16,13 +17,13 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-
             $table->enum('role', ['admin', 'guru']);
-            $table->uuid('guru_id')->nullable(); // reference API Guru
+
+            // TAMBAHKAN ->unique() DI SINI
+            $table->uuid('guru_id')->nullable()->unique();
 
             $table->timestamps();
         });
-
     }
 
     /**

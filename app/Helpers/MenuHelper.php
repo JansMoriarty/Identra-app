@@ -110,6 +110,11 @@ class MenuHelper
                 'icon' => 'charts',
                 'path' => '/subjects'
             ],
+            [
+                'name' => 'Manajemen Kelas',
+                'icon' => 'task',
+                'path' => '/classrooms'
+            ],
         ];
     }
 

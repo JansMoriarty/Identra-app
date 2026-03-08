@@ -1,17 +1,10 @@
 @extends('layouts.app')
 
-<script>
-    // Penambal agar script di app.blade tidak error saat mencari body
-    if (!document.body) {
-        document.write('<body></body>');
-    }
-</script>
-
 @section('content')
 <x-common.page-breadcrumb pageTitle="Kehadiran Guru" />
 <div class="space-y-6">
     <x-common.component-card title="Absensi Guru">
-        <x-tables.basic-tables.tables-classrooms />
+        <x-tables.basic-tables.tables-schedules />
     </x-common.component-card>
 </div>
 @endsection

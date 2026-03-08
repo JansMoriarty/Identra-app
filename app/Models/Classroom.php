@@ -1,4 +1,4 @@
-<?
+<?php
 
 namespace App\Models;
 
@@ -12,6 +12,6 @@ class Classroom extends Model
     protected $fillable = [
         'name',
         'qr_code',
-        // 'location'
+        // 'location',
     ];
-}
+} // Pastikan hanya ada satu kurung tutup di paling akhir

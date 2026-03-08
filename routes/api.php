@@ -9,6 +9,9 @@ use App\Http\Controllers\Api\FaceRecognitionController;
 use App\Http\Controllers\Api\LeaveRequestController;
 use App\Http\Controllers\Api\SubjectController;
 use App\Http\Controllers\Api\ClassroomController;
+use App\Http\Controllers\Api\ScheduleController;
+use App\Http\Controllers\Api\ClassAttendanceController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -40,8 +43,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
      */
     Route::middleware(['role:guru'])->group(function () {
 
+        Route::post('/class-attendance/scan', [ClassAttendanceController::class, 'store']);
+
         // Cek Kehadiran Hari Ini
         Route::get('/attendance/today/{guru_id}', [AttendanceController::class, 'getAttendanceToday']);
+
+        Route::get('/schedules/today/{guru_id}', [ScheduleController::class, 'getTodaySchedule']);
 
         // Verifikasi Wajah (Proses Absensi) - Kita akan buat method ini selanjutnya
         Route::post('/attendance/verify', [FaceRecognitionController::class, 'verifyFace']);
@@ -70,5 +77,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         Route::apiResource('subjects', SubjectController::class);
         Route::apiResource('classrooms', ClassroomController::class);
+        Route::apiResource('schedules', ScheduleController::class);
     });
 });

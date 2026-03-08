@@ -88,8 +88,16 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::get('/subjects', function () {
         // Sesuaikan dengan folder: page > subjects > index
-        return view('pages.subjects.index'); 
+        return view('pages.subjects.index');
     })->name('admin.subjects.index');
+
+    Route::get('/classrooms', function () {
+        return view('pages.classrooms.index'); // Sesuaikan dengan lokasi file blade kamu
+    })->name('classrooms.index');
+
+    Route::get('/schedules', function () {
+    return view('pages.schedules.index'); // Sesuaikan dengan lokasi file blade kamu
+})->name('schedules.index');
 
     // Charts
     Route::get('/line-chart', fn() => view('pages.chart.line-chart', ['title' => 'Line Chart']))->name('line-chart');
