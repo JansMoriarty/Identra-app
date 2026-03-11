@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\SubjectController;
 use App\Http\Controllers\Api\ClassroomController;
 use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\ClassAttendanceController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\Api\AssessmentCategoryController;
 
 
 /*
@@ -23,9 +25,10 @@ use App\Http\Controllers\Api\ClassAttendanceController;
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/guru/login', [AuthController::class, 'loginGuru']);
 
-Route::post('/attendance/store-face', [FaceRecognitionController::class, 'registerFace']);
 
 Route::get('/face-profiles', [FaceRecognitionController::class, 'getAllFaceProfiles']);
+
+Route::middleware('auth:sanctum')->get('/attendance/stats', [ReportController::class, 'getPersonalStats']);
 
 // Mengambil detail nama guru berdasarkan ID setelah wajah cocok
 Route::get('/guru-detail/{id}', [AdminGuruController::class, 'show']);
@@ -42,6 +45,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
      * Hanya guru yang bisa mendaftarkan wajah dan melakukan absensi
      */
     Route::middleware(['role:guru'])->group(function () {
+
+        Route::post('/attendance/store-face', [FaceRecognitionController::class, 'registerFace']);
+
 
         Route::post('/class-attendance/scan', [ClassAttendanceController::class, 'store']);
 
@@ -78,5 +84,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::apiResource('subjects', SubjectController::class);
         Route::apiResource('classrooms', ClassroomController::class);
         Route::apiResource('schedules', ScheduleController::class);
+
+        Route::apiResource('assessment-categories', AssessmentCategoryController::class);
     });
 });

@@ -23,4 +23,9 @@ class Schedule extends Model
     {
         return $this->belongsTo(Subject::class);
     }
+
+    public function user() // Ubah dari guru ke user
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

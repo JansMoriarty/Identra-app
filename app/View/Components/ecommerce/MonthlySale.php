@@ -8,9 +8,11 @@ use Illuminate\View\Component;
 
 class MonthlySale extends Component
 {
-    public function __construct()
+    public $leaves; // Variabel ini yang akan dibaca di blade sebagai $leaves
+
+    public function __construct($leaves = [])
     {
-        //
+        $this->leaves = $leaves;
     }
 
     public function render(): View|Closure|string

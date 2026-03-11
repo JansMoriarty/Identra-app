@@ -14,9 +14,15 @@ return new class extends Migration
         Schema::create('face_profiles', function (Blueprint $table) {
             $table->id();
 
-            $table->uuid('guru_id')->unique();
+            // Menggunakan foreignId jika tabel users menggunakan id() standar
+            // atau gunakan $table->uuid('user_id') jika tabel users pakai UUID
+            $table->foreignId('user_id')
+                ->unique()
+                ->constrained('users')
+                ->onDelete('cascade');
+
             $table->string('image_path')->nullable();
-            $table->longText('face_descriptor');
+            $table->longText('face_descriptor'); // Tempat menyimpan JSON embedding [0.12, -0.04, ...]
 
             $table->timestamps();
         });

@@ -2,18 +2,30 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class FaceProfile extends Model
 {
-    protected $fillable = ['guru_id', 'image_path', 'face_descriptor'];
+    use HasFactory;
 
-    protected $casts = [
-        'face_descriptor' => 'array', // Krusial: Mengubah JSON DB menjadi Array PHP
+    // Pastikan fillable sesuai dengan nama kolom di Migration baru
+    protected $fillable = [
+        'user_id', // Ganti guru_id jadi user_id jika di migration sudah diubah
+        'image_path',
+        'face_descriptor'
     ];
 
+    protected $casts = [
+        'face_descriptor' => 'array', // Sangat tepat! 192 float akan jadi Array PHP
+    ];
+
+    /**
+     * Relasi ke User
+     */
     public function user()
     {
-        return $this->belongsTo(User::class, 'guru_id', 'guru_id');
+        // Jika kolom di tabel ini adalah 'user_id' dan di tabel users adalah 'id'
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 }

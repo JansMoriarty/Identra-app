@@ -11,6 +11,13 @@ use App\Http\Controllers\AttendanceRuleController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\Api\AdminGuruController;
+use App\Http\Controllers\ReportClassController;
+use App\Http\Controllers\AssessmentCategoryWebController;
+use App\Http\Controllers\AssessmentWebController;
+use App\Http\Controllers\AssessmentPeriodWebController;
+use App\Http\Controllers\AssessmentReportController;
+
+
 
 use App\Models\User;
 /*
@@ -96,8 +103,39 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     })->name('classrooms.index');
 
     Route::get('/schedules', function () {
-    return view('pages.schedules.index'); // Sesuaikan dengan lokasi file blade kamu
-})->name('schedules.index');
+        return view('pages.schedules.index'); // Sesuaikan dengan lokasi file blade kamu
+    })->name('schedules.index');
+
+    // Route untuk menampilkan halaman index (Tabel Alpine.js)
+    Route::get('/assessment-categories', [AssessmentCategoryWebController::class, 'index'])->name('admin.categories.index');
+    // Route untuk menyimpan kategori baru (dari Modal Tambah)
+    Route::post('/assessment-categories', [AssessmentCategoryWebController::class, 'store'])->name('admin.categories.store');
+    // Route untuk menampilkan halaman edit
+    Route::get('/assessment-categories/{id}/edit', [AssessmentCategoryWebController::class, 'edit'])->name('admin.categories.edit');
+    // Route untuk memproses update data
+    Route::put('/assessment-categories/{id}', [AssessmentCategoryWebController::class, 'update'])->name('admin.categories.update');
+    // Route untuk menghapus data (digunakan oleh confirmDelete di Alpine.js)
+    Route::delete('/assessment-categories/{id}', [AssessmentCategoryWebController::class, 'destroy'])->name('admin.categories.destroy');
+
+    Route::get('/report-class', [ReportClassController::class, 'index'])->name('report-class.index');
+
+
+    Route::resource('assessment-periods', AssessmentPeriodWebController::class)->names([
+        'index' => 'admin.periods.index',
+        'store' => 'admin.periods.store',
+        'update' => 'admin.periods.update',
+        'destroy' => 'admin.periods.destroy',
+    ]);
+
+    Route::get('/assessments', [AssessmentWebController::class, 'index'])->name('admin.assessments.index');
+    Route::post('/assessments', [AssessmentWebController::class, 'store'])->name('admin.assessments.store');
+
+    // Mengubah nama route agar sesuai dengan pemanggilan di View
+    Route::get('/report-assessments', [AssessmentReportController::class, 'index'])
+        ->name('report-assessments.index');
+
+    Route::get('/report-assessments/{id}', [AssessmentReportController::class, 'show'])
+        ->name('report-assessments.show');
 
     // Charts
     Route::get('/line-chart', fn() => view('pages.chart.line-chart', ['title' => 'Line Chart']))->name('line-chart');

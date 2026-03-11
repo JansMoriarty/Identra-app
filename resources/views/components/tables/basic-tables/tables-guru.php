@@ -19,7 +19,7 @@
     init() {
         fetch('/api/admin/guru', {
             headers: {
-                'Authorization': 'Bearer 1|Sg8C2z2Oo2wny9FJy4RHtuK9doSo93yPoWO1JTUN58667636',
+                'Authorization': 'Bearer 1|a1rekHPbsV9hlvoFCruta9c7mmT85Tarcstg8JJv3614fb12',
                 'Accept': 'application/json'
             },
             credentials: 'same-origin'
@@ -76,12 +76,35 @@
     },
 
     get displayedPages() {
-        const pages = [];
-        for (let i = 1; i <= this.totalPages; i++) {
-            pages.push(i);
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const delta = 1; // Jumlah angka di kiri & kanan halaman aktif (mirip onEachSide)
+    const range = [];
+    const rangeWithDots = [];
+    let l;
+
+    // Masukkan angka halaman yang ingin ditampilkan ke array 'range'
+    for (let i = 1; i <= total; i++) {
+        if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+            range.push(i);
         }
-        return pages;
-    },
+    }
+
+    // Tambahkan titik-titik (...) jika ada lompatan angka
+    for (let i of range) {
+        if (l) {
+            if (i - l === 2) {
+                rangeWithDots.push(l + 1);
+            } else if (i - l !== 1) {
+                rangeWithDots.push('...');
+            }
+        }
+        rangeWithDots.push(i);
+        l = i;
+    }
+
+    return rangeWithDots;
+},
 
     prevPage() { 
         if (this.currentPage > 1) this.currentPage--; 
@@ -154,7 +177,7 @@
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer 1|Sg8C2z2Oo2wny9FJy4RHtuK9doSo93yPoWO1JTUN58667636',
+                'Authorization': 'Bearer 1|a1rekHPbsV9hlvoFCruta9c7mmT85Tarcstg8JJv3614fb12',
                 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
             }
         })

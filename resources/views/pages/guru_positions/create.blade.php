@@ -174,7 +174,7 @@
                         `/api/admin/guru?search=${encodeURIComponent(this.searchQuery)}`, {
                             headers: {
                                 "Accept": "application/json",
-                                "Authorization": "Bearer 1|Sg8C2z2Oo2wny9FJy4RHtuK9doSo93yPoWO1JTUN58667636"
+                                "Authorization": "Bearer 1|a1rekHPbsV9hlvoFCruta9c7mmT85Tarcstg8JJv3614fb12"
                             }
                         }
                     );

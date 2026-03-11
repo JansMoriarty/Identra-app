@@ -8,6 +8,10 @@
     endDate: '{{ request('end', date('Y-m-d')) }}',
     rekapGuru: @js($rekapGuru),
 
+    // State Pagination
+    currentPage: 1,
+    perPage: 10,
+
     setupPickers() {
         this.$nextTick(() => {
             const config = {
@@ -27,6 +31,12 @@
         });
     },
 
+    // Reset ke halaman 1 setiap kali user mengetik pencarian
+    updateSearch(val) {
+        this.search = val;
+        this.currentPage = 1;
+    },
+
     get filteredSummary() {
         if (!this.search) return this.rekapGuru;
         return this.rekapGuru.filter(g => 
@@ -35,10 +45,21 @@
         );
     },
 
+    // Data yang dipotong sesuai halaman saat ini
+    get paginatedData() {
+        let start = (this.currentPage - 1) * this.perPage;
+        let end = start + this.perPage;
+        return this.filteredSummary.slice(start, end);
+    },
+
+    get totalPages() {
+        return Math.ceil(this.filteredSummary.length / this.perPage);
+    },
+
     exportExcel() {
-    const url = `/report/all-excel?start=${this.startDate}&end=${this.endDate}`;
-    window.location.href = url;
-},
+        const url = `/report/all-excel?start=${this.startDate}&end=${this.endDate}`;
+        window.location.href = url;
+    },
 
     printAllReport() {
         const url = `/report/all-pdf?start=${this.startDate}&end=${this.endDate}`;
@@ -71,7 +92,10 @@
 
         <div class="flex-1 w-full">
             <div class="relative group">
-                <input type="text" x-model="search" placeholder="Cari nama guru atau NIP..."
+                <input type="text"
+                    :value="search"
+                    @input="updateSearch($event.target.value)"
+                    placeholder="Cari nama guru atau NIP..."
                     class="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:border-blue-500 transition-all outline-none text-gray-700 dark:text-white">
                 <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,7 +124,7 @@
         </div>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead class="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
@@ -114,7 +138,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                    <template x-for="guru in filteredSummary" :key="guru.id">
+                    <template x-for="guru in paginatedData" :key="guru.id">
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors group">
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
@@ -146,8 +170,54 @@
                             </td>
                         </tr>
                     </template>
+
+                    <template x-if="filteredSummary.length === 0">
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                                Tidak ada data guru yang cocok dengan pencarian.
+                            </td>
+                        </tr>
+                    </template>
                 </tbody>
             </table>
+        </div>
+
+        <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="text-xs text-gray-500 font-medium">
+                Menampilkan <span x-text="paginatedData.length" class="font-bold"></span>
+                dari <span x-text="filteredSummary.length" class="font-bold"></span> data guru
+            </div>
+
+            <div class="flex items-center gap-1" x-show="totalPages > 1">
+                <button @click="currentPage > 1 ? currentPage-- : null" :disabled="currentPage === 1"
+                    class="p-2 rounded-lg border dark:border-gray-700 disabled:opacity-30">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M15 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+
+                <template x-for="page in totalPages" :key="page">
+                    <div>
+                        <template x-if="page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)">
+                            <button @click="currentPage = page" x-text="page"
+                                :class="currentPage === page ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border dark:border-gray-700'"
+                                class="w-9 h-9 text-xs font-bold rounded-lg transition-all">
+                            </button>
+                        </template>
+
+                        <template x-if="(page === 2 && currentPage > 3) || (page === totalPages - 1 && currentPage < totalPages - 2)">
+                            <span class="px-2 text-gray-400">...</span>
+                        </template>
+                    </div>
+                </template>
+
+                <button @click="currentPage < totalPages ? currentPage++ : null" :disabled="currentPage === totalPages"
+                    class="p-2 rounded-lg border dark:border-gray-700 disabled:opacity-30">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </div>
         </div>
     </div>
 </div>

@@ -4,7 +4,7 @@
     itemsPerPage: 10,
     currentPage: 1,
     isLoading: false,
-    apiToken: '1|Sg8C2z2Oo2wny9FJy4RHtuK9doSo93yPoWO1JTUN58667636',
+    apiToken: '1|a1rekHPbsV9hlvoFCruta9c7mmT85Tarcstg8JJv3614fb12',
 
     // MODALS STATE
     showCreateModal: false,

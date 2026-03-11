@@ -106,35 +106,35 @@ class ReportController extends Controller
     }
 
     private function getRekapData($start, $end)
-{
-    // Jika start/end kosong, ambil dari request atau default bulan ini
-    $start = $start ?? request('start', date('Y-m-01'));
-    $end = $end ?? request('end', date('Y-m-d'));
+    {
+        // Jika start/end kosong, ambil dari request atau default bulan ini
+        $start = $start ?? request('start', date('Y-m-01'));
+        $end = $end ?? request('end', date('Y-m-d'));
 
-    return User::where('role', 'guru')->get()->map(function ($guru) use ($start, $end) {
-        // Gunakan whereDate untuk memastikan perbandingan string tanggal sukses
-        $attendances = $guru->attendances()
-            ->whereDate('tanggal', '>=', $start)
-            ->whereDate('tanggal', '<=', $end)
-            ->get();
+        return User::where('role', 'guru')->get()->map(function ($guru) use ($start, $end) {
+            // Gunakan whereDate untuk memastikan perbandingan string tanggal sukses
+            $attendances = $guru->attendances()
+                ->whereDate('tanggal', '>=', $start)
+                ->whereDate('tanggal', '<=', $end)
+                ->get();
 
-        $h = $attendances->where('status', 'hadir')->count();
-        $t = $attendances->where('status', 'telat')->count();
-        $i = $attendances->whereIn('status', ['izin', 'sakit'])->count();
-        $a = $attendances->where('status', 'alpha')->count();
-        $total = $attendances->count();
+            $h = $attendances->where('status', 'hadir')->count();
+            $t = $attendances->where('status', 'telat')->count();
+            $i = $attendances->whereIn('status', ['izin', 'sakit'])->count();
+            $a = $attendances->where('status', 'alpha')->count();
+            $total = $attendances->count();
 
-        return [
-            'name'        => $guru->name,
-            'nip'         => $guru->nip,
-            'total_hadir' => $h,
-            'total_telat' => $t,
-            'total_izin'  => $i,
-            'total_alpha' => $a,
-            'persentase'  => $total > 0 ? round((($h + $t) / $total) * 100) : 0,
-        ];
-    })->toArray();
-}
+            return [
+                'name'        => $guru->name,
+                'nip'         => $guru->nip,
+                'total_hadir' => $h,
+                'total_telat' => $t,
+                'total_izin'  => $i,
+                'total_alpha' => $a,
+                'persentase'  => $total > 0 ? round((($h + $t) / $total) * 100) : 0,
+            ];
+        })->toArray();
+    }
 
     public function allExcel(Request $request)
     {
@@ -145,5 +145,42 @@ class ReportController extends Controller
         $rekapGuru = $this->getRekapData($request->get('start'), $request->get('end'));
 
         return Excel::download(new RekapGuruExport($rekapGuru), "Rekap_Absensi_{$start}_to_{$end}.xlsx");
+    }
+
+    public function getPersonalStats(Request $request)
+    {
+        $user = $request->user();
+
+        // 1. Ambil guru_id (UUID) dari user yang login
+        // Berdasarkan log kamu, kolomnya di tabel users bernama 'guru_id'
+        $guruUuid = $user->guru_id;
+
+        $start = $request->get('start');
+        $end = $request->get('end');
+
+        // 2. Gunakan $guruUuid untuk mencari di tabel attendances
+        $attendances = Attendance::where('guru_id', $guruUuid)
+            ->whereBetween('tanggal', [$start, $end])
+            ->get();
+
+        // 3. Mapping data untuk kalender
+        $calendarData = $attendances->map(function ($item) {
+            return [
+                'date' => $item->tanggal,
+                'status' => strtolower($item->status), // 'sakit', 'izin', dll
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'summary' => [
+                'hadir' => $attendances->where('status', 'hadir')->count(),
+                'telat' => $attendances->where('status', 'telat')->count(),
+                'izin'  => $attendances->where('status', 'izin')->count(),
+                'sakit' => $attendances->where('status', 'sakit')->count(),
+                'alpha' => $attendances->where('status', 'alpha')->count(),
+            ],
+            'calendar' => $calendarData
+        ]);
     }
 }

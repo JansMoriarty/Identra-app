@@ -13,12 +13,12 @@ class ClassAttendance extends Model
     // 1. Tentukan kolom mana saja yang boleh diisi
     protected $fillable = [
         'user_id',
+        'subject_name', // <--- TAMBAHKAN INI (WAJIB)
         'class_code',
         'tanggal',
         'jam_masuk',
         'metode',
     ];
-
     /**
      * Relasi ke Model User
      * Mengasumsikan satu absen kelas dimiliki oleh satu User (Guru)

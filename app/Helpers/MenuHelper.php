@@ -115,6 +115,41 @@ class MenuHelper
                 'icon' => 'task',
                 'path' => '/classrooms'
             ],
+            [
+                'name' => 'Jadwal Guru',
+                'icon' => 'pages',
+                'path' => '/schedules'
+            ],
+            [
+                'name' => 'Laporan Mapel',
+                'icon' => 'pages',
+                'path' => '/report-class'
+            ],
+        ];
+    }
+    public static function getAssessmentItems()
+    {
+        return [
+            [
+                'name' => 'Kategori Penilaian',
+                'icon' => 'charts',
+                'path' => '/assessment-categories'
+            ],
+            [
+                'name' => 'Periode Penilaian',
+                'icon' => 'task',
+                'path' => '/assessment-periods'
+            ],
+            [
+                'name' => 'Penilaian',
+                'icon' => 'pages',
+                'path' => '/assessments'
+            ],
+            [
+                'name' => 'Laporan Penilaian',
+                'icon' => 'pages',
+                'path' => '/report-assessments'
+            ],
         ];
     }
 
@@ -136,6 +171,10 @@ class MenuHelper
             [
                 'title' => 'Manajemen Mapel',
                 'items' => self::getMapelItems()
+            ],
+            [
+                'title' => 'Penilaian Guru',
+                'items' => self::getAssessmentItems()
             ]
         ];
     }

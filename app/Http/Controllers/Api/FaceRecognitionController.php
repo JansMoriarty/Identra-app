@@ -12,13 +12,10 @@ class FaceRecognitionController extends Controller
 {
     public function registerFace(Request $request)
     {
-        // Paksa Laravel menganggap ini request JSON agar jika validasi gagal, return-nya JSON
-        $request->headers->set('Accept', 'application/json');
-
-        // Gunakan Validator manual agar kita bisa menangkap error-nya dengan pasti
+        // 1. Validasi Input
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
-            'guru_id'         => 'required',
-            'face_descriptor' => 'required',
+            'guru_id'         => 'required', // UUID dari Flutter
+            'face_descriptor' => 'required', // Array 192 koordinat
         ]);
 
         if ($validator->fails()) {
@@ -30,59 +27,63 @@ class FaceRecognitionController extends Controller
         }
 
         try {
-            return DB::transaction(function () use ($request) {
-                // Cari user berdasarkan guru_id. 
-                // PASTIKAN kolom 'guru_id' benar-benar ada di tabel 'users'
-                $user = User::where('guru_id', $request->guru_id)->first();
+            return \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+                // 2. Cari User berdasarkan UUID (guru_id)
+                $user = \App\Models\User::where('guru_id', $request->guru_id)->first();
 
                 if (!$user) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Guru dengan ID ' . $request->guru_id . ' tidak ditemukan di tabel users.'
+                        'message' => 'Guru tidak ditemukan di sistem.'
                     ], 404);
                 }
 
+                // 3. Pastikan Descriptor dalam bentuk Array (antisipasi jika Flutter kirim String)
                 $descriptor = $request->face_descriptor;
-
-                // Jika dari JS dikirim lewat JSON.stringify, biasanya dia masuk sebagai string
                 if (is_string($descriptor)) {
                     $descriptor = json_decode($descriptor, true);
                 }
 
-                if (!is_array($descriptor)) {
+                // 4. Validasi panjang array (AI Face Mobile biasanya 192 dimensi)
+                if (!is_array($descriptor) || count($descriptor) !== 192) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Format descriptor tidak valid (harus array).'
+                        'message' => 'Data wajah tidak valid. Harus berisi 192 koordinat AI.',
+                        'count'   => is_array($descriptor) ? count($descriptor) : 0
                     ], 400);
                 }
 
-                $faceProfile = FaceProfile::updateOrCreate(
-                    ['guru_id' => $user->guru_id],
+                // 5. Simpan ke Tabel face_profiles
+                // PERBAIKAN: Gunakan user_id (integer) untuk pencarian di tabel ini
+                \App\Models\FaceProfile::updateOrCreate(
+                    ['user_id' => $user->id], // Primary key (1, 2, dst)
                     [
-                        'face_descriptor' => json_encode($descriptor),
+                        'face_descriptor' => $descriptor,
+                        'image_path'      => $request->image_path ?? null,
                     ]
                 );
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Registrasi wajah ' . $user->name . ' berhasil!',
+                    'message' => 'Profil wajah ' . $user->name . ' berhasil diperbarui!',
                 ], 200);
             });
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error Server: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan sistem.',
+                'debug'   => $e->getMessage()
             ], 500);
         }
     }
-
     public function getAllFaceProfiles()
     {
-        // Gunakan join atau eager loading untuk mengambil nama dari tabel users
-        $profiles = \App\Models\FaceProfile::join('users', 'face_profiles.guru_id', '=', 'users.guru_id')
-            ->select('face_profiles.guru_id', 'face_profiles.face_descriptor', 'users.name')
-            ->get();
+        // Mengambil data face profile beserta data user terkaitnya
+        $profiles = FaceProfile::with('user:guru_id,name')->get();
 
-        return response()->json($profiles);
+        return response()->json([
+            'success' => true,
+            'data' => $profiles
+        ]);
     }
 }
