@@ -12,6 +12,8 @@
     currentPage: 1,
     perPage: 10,
 
+    
+
     setupPickers() {
         this.$nextTick(() => {
             const config = {
@@ -41,6 +43,7 @@
         if (!this.search) return this.rekapGuru;
         return this.rekapGuru.filter(g => 
             (g.name && g.name.toLowerCase().includes(this.search.toLowerCase())) ||
+            (g.jabatan_aktif && g.jabatan_aktif.toLowerCase().includes(this.search.toLowerCase())) ||
             (g.nip && g.nip.toString().includes(this.search))
         );
     },
@@ -130,10 +133,10 @@
                 <thead class="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
                     <tr>
                         <th class="px-6 py-4 text-[10px] font-black uppercase text-gray-400 tracking-widest">Informasi Guru</th>
-                        <th class="px-6 py-4 text-[10px] font-black uppercase text-gray-400 tracking-widest text-center">Hadir</th>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase text-green-400 tracking-widest text-center">Hadir</th>
                         <th class="px-6 py-4 text-[10px] font-black uppercase text-amber-500 tracking-widest text-center">Telat</th>
                         <th class="px-6 py-4 text-[10px] font-black uppercase text-blue-500 tracking-widest text-center">Izin/Sakit</th>
-                        <th class="px-6 py-4 text-[10px] font-black uppercase text-rose-500 tracking-widest text-center">Alpha</th>
+                        <th class="px-6 py-4 text-[10px] font-black uppercase text-red-500 tracking-widest text-center">Alpha</th>
                         <th class="px-6 py-4 text-[10px] font-black uppercase text-gray-400 tracking-widest text-center">Skor</th>
                     </tr>
                 </thead>
@@ -149,6 +152,7 @@
                                     <div class="flex flex-col">
                                         <span class="text-sm font-bold text-gray-900 dark:text-white" x-text="guru.name"></span>
                                         <span class="text-[11px] text-gray-400 font-mono tracking-tighter" x-text="guru.nip || '-'"></span>
+                                        <span class="text-[11px] text-gray-400 font-mono tracking-tighter" x-text="guru.jabatan_aktif || '-'"></span>
                                     </div>
                                 </div>
                             </td>

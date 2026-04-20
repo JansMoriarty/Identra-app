@@ -94,4 +94,10 @@ class User extends Authenticatable
     {
         return $this->role === 'guru';
     }
+
+    public function pointLedgers()
+    {
+        // Relasi ke tabel point_ledgers menggunakan foreign key user_id
+        return $this->hasMany(\App\Models\PointLedger::class, 'user_id');
+    }
 }

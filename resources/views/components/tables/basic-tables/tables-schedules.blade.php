@@ -204,7 +204,7 @@
             subjects: [],
             isLoading: false,
             isSaving: false,
-            apiToken: '1|a1rekHPbsV9hlvoFCruta9c7mmT85Tarcstg8JJv3614fb12',
+            apiToken: '1|F3M1VY1PtXzROpUkINd3YsH6JXrx5v0gPibL9U7Rb03fb03f',
 
             bulkData: {
                 user_id: '',

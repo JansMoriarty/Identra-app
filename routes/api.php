@@ -13,6 +13,9 @@ use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\ClassAttendanceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\Api\AssessmentCategoryController;
+use App\Http\Controllers\Api\AssessmentController;
+use App\Http\Controllers\Api\MarketplaceController;
+use App\Http\Controllers\Api\ProfileController;
 
 
 /*
@@ -35,6 +38,8 @@ Route::get('/guru-detail/{id}', [AdminGuruController::class, 'show']);
 
 Route::post('/attendance/scan-face', [App\Http\Controllers\Api\AttendanceController::class, 'scanFace']);
 
+Route::get('/attendance/settings', [App\Http\Controllers\AttendanceRuleController::class, 'getSettings']);
+
 
 // Protected Routes (Harus Login Sanctum)
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -48,6 +53,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         Route::post('/attendance/store-face', [FaceRecognitionController::class, 'registerFace']);
 
+        Route::get('/my-performance', [AssessmentController::class, 'getMyReport']);
 
         Route::post('/class-attendance/scan', [ClassAttendanceController::class, 'store']);
 
@@ -60,6 +66,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/attendance/verify', [FaceRecognitionController::class, 'verifyFace']);
 
         Route::middleware('auth:sanctum')->post('/leave-request', [LeaveRequestController::class, 'store']);
+
+        Route::post('/attendance/verify-face', [AttendanceController::class, 'verifyAndStore']);
+
+        // API Marketplace
+        Route::get('/marketplace/vouchers', [MarketplaceController::class, 'getVouchers']);
+        Route::post('/marketplace/redeem', [MarketplaceController::class, 'redeemVoucher']);
+        Route::get('/my-tokens', [MarketplaceController::class, 'myTokens']);
+        // routes/api.php
+
+        Route::get('/profile/summary', [ProfileController::class, 'getSummary']);
+
+        Route::get('/point-history', [MarketplaceController::class, 'pointHistory']);
+        
     });
 
 

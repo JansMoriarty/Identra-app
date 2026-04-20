@@ -15,11 +15,9 @@ class ReportController extends Controller
     // 1. HALAMAN REKAP KESELURUHAN (WEB VIEW)
     public function index(Request $request)
     {
-        // Default ke awal bulan sampai hari ini jika tidak ada filter
         $startDate = $request->get('start', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end', Carbon::now()->format('Y-m-d'));
 
-        // Query Guru dengan agregasi status absen secara langsung
         $rekapGuru = User::where('role', 'guru')
             ->withCount([
                 'attendances as total_hadir' => fn($q) => $q->whereBetween('tanggal', [$startDate, $endDate])->where('status', 'hadir'),
@@ -28,24 +26,24 @@ class ReportController extends Controller
                 'attendances as total_sakit' => fn($q) => $q->whereBetween('tanggal', [$startDate, $endDate])->where('status', 'sakit'),
                 'attendances as total_alpha' => fn($q) => $q->whereBetween('tanggal', [$startDate, $endDate])->where('status', 'alpha'),
             ])
+            ->with(['guruPositions' => function ($q) {
+                $q->where('is_active', true)->with('position');
+            }])
             ->get()
             ->map(function ($guru) {
-                // Hitung persentase kehadiran (Hadir + Telat / Total Hari Kerja)
-                // Kita asumsi hari kerja adalah total rekaman yang seharusnya ada, 
-                // atau bisa pakai angka statis (misal 22 hari)
+                $posisiAktif = $guru->guruPositions->first();
+                $guru->jabatan_aktif = $posisiAktif && $posisiAktif->position
+                    ? $posisiAktif->position->nama_jabatan
+                    : 'Belum Ditugaskan';
+
+                // Hitung persentase
                 $totalHadir = $guru->total_hadir + $guru->total_telat;
-
-                // Skenario: Hitung persentase berdasarkan durasi hari yang dipilih
                 $diffInDays = Carbon::parse(request('start'))->diffInDays(Carbon::parse(request('end'))) ?: 1;
-                $guru->persentase = round(($totalHadir / ($diffInDays + 1)) * 100);
-
-                // Pastikan tidak lebih dari 100%
-                if ($guru->persentase > 100) $guru->persentase = 100;
+                $guru->persentase = min(round(($totalHadir / ($diffInDays + 1)) * 100), 100);
 
                 return $guru;
             });
 
-        // Sesuaikan path view dengan lokasi file kamu
         return view('pages.reports.index', compact('rekapGuru', 'startDate', 'endDate'));
     }
 
@@ -127,6 +125,7 @@ class ReportController extends Controller
             return [
                 'name'        => $guru->name,
                 'nip'         => $guru->nip,
+                'jabatan_aktif'  => $guru->nama_jabatan,
                 'total_hadir' => $h,
                 'total_telat' => $t,
                 'total_izin'  => $i,

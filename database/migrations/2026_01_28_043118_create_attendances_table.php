@@ -18,14 +18,27 @@ return new class extends Migration
             $table->time('jam_masuk')->nullable();
             $table->time('jam_pulang')->nullable();
 
-            // Status absensi
-            $table->enum('status', ['izin', 'sakit', 'hadir', 'alpha', 'telat']);
+            // 1. Tambahkan status 'telat_kompensasi' agar di laporan tetap terlihat 
+            // bedanya antara yang benar-benar rajin vs yang dibantu token.
+            $table->enum('status', ['izin', 'sakit', 'hadir', 'alpha', 'telat', 'telat_kompensasi']);
 
-            // Tambahkan 'manual' di sini
             $table->enum('metode', ['face', 'manual'])->default('manual');
-
-            // Penting untuk alasan izin/sakit
             $table->text('keterangan')->nullable();
+
+            // --- TAMBAHAN UNTUK DOMPET INTEGRITAS ---
+
+            // 2. Kolom untuk Interceptor Token
+            $table->boolean('is_token_applied')->default(false);
+            $table->string('token_info')->nullable(); // Menyimpan nama token yang dipakai (Cth: "Bebas Telat 15 Menit")
+
+            // 3. Kolom untuk Traceability Poin
+            // Menyimpan poin yang didapat/dikurangi dari absensi ini
+            $table->integer('points_earned')->default(0);
+
+            // 4. Koordinat (Opsional tapi disarankan untuk validasi Face Auth di Laravel)
+            $table->decimal('latitude', 10, 8)->nullable();
+            $table->decimal('longitude', 11, 8)->nullable();
+            // ----------------------------------------
 
             $table->timestamps();
             $table->unique(['guru_id', 'tanggal']);

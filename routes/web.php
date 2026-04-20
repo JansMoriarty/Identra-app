@@ -16,6 +16,9 @@ use App\Http\Controllers\AssessmentCategoryWebController;
 use App\Http\Controllers\AssessmentWebController;
 use App\Http\Controllers\AssessmentPeriodWebController;
 use App\Http\Controllers\AssessmentReportController;
+use App\Http\Controllers\FlexibilityItemController;
+use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\PointRuleController;
 
 
 
@@ -40,6 +43,12 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 */
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
+
+    Route::resource('point-rules', PointRuleController::class);
+
+    Route::get('/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard.index');
+
+    Route::resource('vouchers', FlexibilityItemController::class);
 
     // Main Dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');

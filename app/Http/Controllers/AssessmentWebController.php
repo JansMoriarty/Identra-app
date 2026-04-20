@@ -2,85 +2,102 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Http\Controllers\Controller;
 use App\Models\Assessment;
 use App\Models\AssessmentCategory;
 use App\Models\AssessmentPeriod;
-use App\Models\AssessmentDetail;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AssessmentWebController extends Controller
 {
+    /**
+     * Menampilkan Dashboard Penilaian Guru
+     */
     public function index()
     {
+        // 1. Ambil Periode Aktif
         $activePeriod = AssessmentPeriod::where('is_active', true)->first();
-        $teachers = User::where('role', 'guru')->get();
+
+        // 2. Ambil Semua Guru (Role: guru)
+        $teachers = User::where('role', 'guru')
+            ->select('id', 'name', 'email')
+            ->get();
+
+        // 3. Ambil Semua Kategori Penilaian (untuk modal input)
         $categories = AssessmentCategory::all();
 
-        // Ambil ID guru yang sudah dinilai di periode aktif
-        $ratedTeacherIds = Assessment::where('assessment_period_id', $activePeriod->id ?? 0)
-            ->pluck('teacher_id')
-            ->toArray();
+        // 4. Ambil ID Guru yang SUDAH dinilai pada periode aktif ini
+        $ratedTeacherIds = [];
+        if ($activePeriod) {
+            $ratedTeacherIds = Assessment::where('assessment_period_id', $activePeriod->id)
+                ->pluck('teacher_id')
+                ->toArray();
+        }
 
-        return view('pages.assessments.index', compact('teachers', 'categories', 'activePeriod', 'ratedTeacherIds'));
+        return view('pages.assessments.index', [
+            'title' => 'Penilaian Guru',
+            'activePeriod' => $activePeriod,
+            'teachers' => $teachers,
+            'categories' => $categories,
+            'ratedTeacherIds' => $ratedTeacherIds,
+        ]);
     }
 
+    /**
+     * Menyimpan hasil penilaian
+     */
     public function store(Request $request)
     {
+        // Validasi input
         $request->validate([
             'teacher_id' => 'required|exists:users,id',
             'assessment_period_id' => 'required|exists:assessment_periods,id',
             'scores' => 'required|array',
-            'general_feedback' => 'nullable|string'
+            'general_feedback' => 'nullable|string',
         ]);
-
-        // --- START: VALIDASI CEK DUPLIKAT (Ini kuncinya!) ---
-        $alreadyExists = Assessment::where('teacher_id', $request->teacher_id)
-            ->where('assessment_period_id', $request->assessment_period_id)
-            ->exists();
-
-        if ($alreadyExists) {
-            // Kita kirim pesan spesifik ke session
-            return redirect()->back()->with('error_penilaian', 'Anda sudah menilai guru ini pada periode sekarang!');
-        }
-        // --- END: VALIDASI CEK DUPLIKAT ---
 
         try {
             DB::beginTransaction();
 
+            // 1. Hitung Skor Akhir (Rata-rata atau berdasarkan bobot jika ada)
             $totalScore = 0;
-            $categories = AssessmentCategory::whereIn('id', array_keys($request->scores))->get();
-
-            foreach ($categories as $cat) {
-                $scoreInput = $request->scores[$cat->id];
-                // Rumus: (skor/5) * bobot_persen
-                $totalScore += ($scoreInput / 5) * ($cat->weight);
+            $categoryCount = count($request->scores);
+            
+            foreach ($request->scores as $catId => $score) {
+                $totalScore += (int)$score;
             }
 
+            $finalScore = $categoryCount > 0 ? ($totalScore / $categoryCount) : 0;
+
+            // 2. Simpan Header Assessment
             $assessment = Assessment::create([
                 'teacher_id' => $request->teacher_id,
-                'evaluator_id' => Auth::id(),
+                'evaluator_id' => auth()->id(), // Admin yang sedang login
                 'assessment_period_id' => $request->assessment_period_id,
                 'general_feedback' => $request->general_feedback,
-                'final_score' => $totalScore,
-                'is_visible_to_teacher' => true
+                'final_score' => $finalScore,
+                'is_visible_to_teacher' => true, // Default dibuka agar guru bisa lihat di API/Flutter
             ]);
 
-            foreach ($request->scores as $categoryId => $score) {
-                AssessmentDetail::create([
-                    'assessment_id' => $assessment->id,
+            // 3. Simpan Detail Skor per Kategori
+            foreach ($request->scores as $categoryId => $scoreValue) {
+                $assessment->details()->create([
                     'category_id' => $categoryId,
-                    'score' => $score
+                    'score' => $scoreValue,
                 ]);
             }
 
             DB::commit();
-            return redirect()->back()->with('success', 'Penilaian berhasil disimpan!');
+
+            return redirect()->route('admin.assessments.index')
+                ->with('success', 'Penilaian untuk guru berhasil disimpan.');
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 }
